@@ -82,6 +82,27 @@ export interface RecurringEvent {
   active: boolean;
 }
 
+export interface ShoppingItem {
+  id: number;
+  name: string;
+  categoryName: string;
+  quantity: number;
+  unit: string;
+  bought: boolean;
+  createdAt: string;
+}
+
+export const SHOPPING_CATEGORIES = [
+  'Nabiał',
+  'Warzywa i owoce',
+  'Mięso i ryby',
+  'Pieczywo',
+  'Napoje',
+  'Chemia',
+  'Przekąski',
+  'Inne',
+] as const;
+
 export interface DayData {
   id: number;
   date: string;

@@ -233,6 +233,28 @@ export const recurringEventApi = {
     request<RecurringEventResponse[]>(`/days/${date}/recurring-events/copy-previous`, { method: 'POST' }),
 };
 
+// ── Shopping ──
+export interface ShoppingItemResponse {
+  id: number;
+  name: string;
+  categoryName: string;
+  quantity: number;
+  unit: string;
+  bought: boolean;
+  createdAt: string;
+}
+
+export const shoppingApi = {
+  getAll: () => request<ShoppingItemResponse[]>('/shopping'),
+  create: (data: { name: string; categoryName: string; quantity: number; unit: string }) =>
+    request<ShoppingItemResponse>('/shopping', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { name: string; categoryName: string; quantity: number; unit: string }) =>
+    request<ShoppingItemResponse>(`/shopping/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  toggle: (id: number) => request<ShoppingItemResponse>(`/shopping/${id}/toggle`, { method: 'PATCH' }),
+  delete: (id: number) => request<void>(`/shopping/${id}`, { method: 'DELETE' }),
+  deleteBought: () => request<void>('/shopping/bought', { method: 'DELETE' }),
+};
+
 // ── Backlog ──
 export interface BacklogTaskResponse {
   id: number;
