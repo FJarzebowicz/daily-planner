@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -20,6 +20,256 @@ interface TodoSectionProps {
   onEditCategory: (id: number, updates: Partial<Category>) => void;
   onDeleteCategory: (id: number) => void;
 }
+
+/* ── Shared modal shell ── */
+
+const overlayVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 16 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] } },
+  exit: { opacity: 0, scale: 0.95, y: 16, transition: { duration: 0.18 } },
+};
+
+function ModalShell({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  const handleEsc = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleEsc);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = '';
+    };
+  }, [handleEsc]);
+
+  return (
+    <motion.div
+      className="modal-overlay"
+      variants={overlayVariants}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      onClick={onClose}
+    >
+      <motion.div
+        className="modal"
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="modal-close" onClick={onClose} type="button" aria-label="Zamknij">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ── Floating label input ── */
+
+function FloatingInput({
+  label,
+  value,
+  onChange,
+  autoFocus,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoFocus?: boolean;
+  multiline?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  const floated = focused || value.length > 0;
+  const cls = `fl-field ${floated ? 'fl-field--float' : ''} ${focused ? 'fl-field--focus' : ''}`;
+
+  return (
+    <div className={cls}>
+      {multiline ? (
+        <textarea
+          className="fl-input fl-textarea"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          autoFocus={autoFocus}
+          rows={3}
+        />
+      ) : (
+        <input
+          className="fl-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          autoFocus={autoFocus}
+        />
+      )}
+      <label className="fl-label">{label}</label>
+    </div>
+  );
+}
+
+/* ── Task Modal (add + edit) ── */
+
+function TaskModal({
+  categoryId,
+  initial,
+  onSubmit,
+  onClose,
+}: {
+  categoryId: number;
+  initial?: Task;
+  onSubmit: (data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string }) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(initial?.title ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [estimatedMinutes, setEstimatedMinutes] = useState(initial?.estimatedMinutes ?? 30);
+  const [customTime, setCustomTime] = useState('');
+  const [priority, setPriority] = useState(initial?.priority ?? 'MEDIUM');
+  const isEdit = !!initial;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSubmit({ title: name.trim(), description: description.trim(), categoryId, estimatedMinutes, priority });
+    onClose();
+  }
+
+  const isPreset = TIME_PRESETS.some((p) => p.value === estimatedMinutes) && customTime === '';
+
+  return (
+    <ModalShell onClose={onClose}>
+      <form onSubmit={handleSubmit}>
+        <h3 className="modal-title">{isEdit ? 'Edytuj task' : 'Nowy task'}</h3>
+
+        <FloatingInput label="Nazwa tasku" value={name} onChange={setName} autoFocus />
+
+        <div className="modal-spacer" />
+        <FloatingInput label="Opis (opcjonalny)" value={description} onChange={setDescription} multiline />
+
+        <div className="modal-spacer" />
+        <label className="modal-label">Szacowany czas</label>
+        <div className="time-presets">
+          {TIME_PRESETS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              className={`preset-btn ${isPreset && estimatedMinutes === p.value ? 'preset-btn--active' : ''}`}
+              onClick={() => { setEstimatedMinutes(p.value); setCustomTime(''); }}
+            >
+              {p.label}
+            </button>
+          ))}
+          <input
+            type="number"
+            className="preset-custom"
+            placeholder="min"
+            value={customTime}
+            onChange={(e) => {
+              setCustomTime(e.target.value);
+              const v = parseInt(e.target.value);
+              if (v > 0) setEstimatedMinutes(v);
+            }}
+            min="1"
+          />
+        </div>
+
+        <div className="modal-spacer" />
+        <label className="modal-label">Priorytet</label>
+        <div className="priority-picker">
+          {(['LOW', 'MEDIUM', 'HIGH'] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`priority-btn priority-btn--${p.toLowerCase()} ${priority === p ? 'priority-btn--active' : ''}`}
+              onClick={() => setPriority(p)}
+            >
+              {p === 'LOW' ? 'Niski' : p === 'MEDIUM' ? 'Średni' : 'Wysoki'}
+            </button>
+          ))}
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" className="btn-modal btn-modal--cancel" onClick={onClose}>Anuluj</button>
+          <button type="submit" className="btn-modal btn-modal--save" disabled={!name.trim()}>
+            {isEdit ? 'Zapisz' : 'Dodaj task'}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+/* ── Category Modal (add + edit) ── */
+
+function CategoryModal({
+  initial,
+  onSubmit,
+  onClose,
+}: {
+  initial?: Category;
+  onSubmit: (data: { name: string; color: string }) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [color, setColor] = useState(initial?.color ?? PASTEL_COLORS[0].hex);
+  const isEdit = !!initial;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSubmit({ name: name.trim(), color });
+    onClose();
+  }
+
+  return (
+    <ModalShell onClose={onClose}>
+      <form onSubmit={handleSubmit}>
+        <h3 className="modal-title">{isEdit ? 'Edytuj kategorię' : 'Nowa kategoria'}</h3>
+
+        <FloatingInput label="Nazwa kategorii" value={name} onChange={setName} autoFocus />
+
+        <div className="modal-spacer" />
+        <label className="modal-label">Kolor</label>
+        <div className="color-palette">
+          {PASTEL_COLORS.map((c) => (
+            <motion.button
+              key={c.hex}
+              type="button"
+              className={`color-swatch ${color === c.hex ? 'color-swatch--active' : ''}`}
+              style={{ backgroundColor: c.hex }}
+              onClick={() => setColor(c.hex)}
+              whileHover={{ scale: 1.12 }}
+              whileTap={{ scale: 0.9 }}
+              title={c.name}
+            />
+          ))}
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" className="btn-modal btn-modal--cancel" onClick={onClose}>Anuluj</button>
+          <button type="submit" className="btn-modal btn-modal--save" disabled={!name.trim()}>
+            {isEdit ? 'Zapisz' : 'Dodaj kategorię'}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+/* ── Sortable task row ── */
 
 function SortableTask({
   task,
@@ -134,6 +384,8 @@ function SortableTask({
   );
 }
 
+/* ── Category card ── */
+
 function CategoryCard({
   category,
   tasks,
@@ -179,280 +431,83 @@ function CategoryCard({
   };
 
   return (
-    <motion.div
-      className="category-card"
-      style={{ '--cat-color': category.color, '--cat-text': darken(category.color) } as React.CSSProperties}
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.25 }}
-    >
-      <AnimatePresence mode="wait">
-        {editing ? (
-          <motion.div
-            key="edit-form"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            <CategoryFormWidget
-              initialName={category.name}
-              initialColor={category.color}
-              submitLabel="Zapisz"
-              onSubmit={(data) => {
-                onEditCategory(category.id, data);
-                setEditing(false);
-              }}
-              onCancel={() => setEditing(false)}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="header"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            <div className="category-header" style={{ backgroundColor: category.color }}>
-              <h3 className="category-title" style={{ color: darken(category.color) }}>
-                {category.name}
-                <span className="category-count">{tasks.length}</span>
-              </h3>
-              {!closed && (
-                <div className="category-actions">
-                  <motion.button className="btn-icon-sm" onClick={() => setEditing(true)} whileHover={{ scale: 1.15 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                  </motion.button>
-                  <motion.button className="btn-icon-sm" onClick={() => onDeleteCategory(category.id)} whileHover={{ scale: 1.15 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                  </motion.button>
-                </div>
-              )}
+    <>
+      <motion.div
+        className="category-card"
+        style={{ '--cat-color': category.color, '--cat-text': darken(category.color) } as React.CSSProperties}
+        layout
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="category-header" style={{ backgroundColor: category.color }}>
+          <h3 className="category-title" style={{ color: darken(category.color) }}>
+            {category.name}
+            <span className="category-count">{tasks.length}</span>
+          </h3>
+          {!closed && (
+            <div className="category-actions">
+              <motion.button className="btn-icon-sm" onClick={() => setEditing(true)} whileHover={{ scale: 1.15 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+              </motion.button>
+              <motion.button className="btn-icon-sm" onClick={() => onDeleteCategory(category.id)} whileHover={{ scale: 1.15 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+              </motion.button>
             </div>
-          </motion.div>
+          )}
+        </div>
+
+        <div className="category-body">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+              <AnimatePresence mode="popLayout">
+                {tasks.map((task) => (
+                  <SortableTask
+                    key={task.id}
+                    task={task}
+                    closed={closed}
+                    onToggle={() => onToggleTask(task.id)}
+                    onDelete={() => onDeleteTask(task.id)}
+                    onMoveToBacklog={() => onMoveToBacklog(task)}
+                  />
+                ))}
+              </AnimatePresence>
+            </SortableContext>
+          </DndContext>
+
+          {tasks.length === 0 && (
+            <p className="empty-cat">Brak tasków</p>
+          )}
+
+          {!closed && (
+            <motion.button
+              className="add-task-btn"
+              onClick={() => onAddTask(category.id)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              Dodaj task
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {editing && (
+          <CategoryModal
+            initial={category}
+            onSubmit={(data) => onEditCategory(category.id, data)}
+            onClose={() => setEditing(false)}
+          />
         )}
       </AnimatePresence>
-
-      <div className="category-body">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-            <AnimatePresence mode="popLayout">
-              {tasks.map((task) => (
-                <SortableTask
-                  key={task.id}
-                  task={task}
-                  closed={closed}
-                  onToggle={() => onToggleTask(task.id)}
-                  onDelete={() => onDeleteTask(task.id)}
-                  onMoveToBacklog={() => onMoveToBacklog(task)}
-                />
-              ))}
-            </AnimatePresence>
-          </SortableContext>
-        </DndContext>
-
-        {tasks.length === 0 && (
-          <p className="empty-cat">Brak tasków</p>
-        )}
-
-        {!closed && (
-          <motion.button
-            className="add-task-btn"
-            onClick={() => onAddTask(category.id)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            Dodaj task
-          </motion.button>
-        )}
-      </div>
-    </motion.div>
+    </>
   );
 }
 
-function AddTaskModal({
-  categoryId,
-  onAdd,
-  onClose,
-}: {
-  categoryId: number;
-  onAdd: (data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string }) => void;
-  onClose: () => void;
-}) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [estimatedMinutes, setEstimatedMinutes] = useState(30);
-  const [customTime, setCustomTime] = useState('');
-  const [priority, setPriority] = useState('MEDIUM');
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    onAdd({ title: name.trim(), description: description.trim(), categoryId, estimatedMinutes, priority });
-    onClose();
-  }
-
-  return (
-    <motion.div
-      className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.form
-        className="modal"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-      >
-        <h3 className="modal-title">Nowy task</h3>
-
-        <div className="form-group">
-          <label className="form-label">Nazwa</label>
-          <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Co trzeba zrobić?" autoFocus />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Opis (opcjonalny)</label>
-          <input className="form-input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Szczegóły..." />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Szacowany czas</label>
-          <div className="time-presets">
-            {TIME_PRESETS.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                className={`preset-btn ${estimatedMinutes === p.value ? 'preset-btn--active' : ''}`}
-                onClick={() => { setEstimatedMinutes(p.value); setCustomTime(''); }}
-              >
-                {p.label}
-              </button>
-            ))}
-            <input
-              type="number"
-              className="preset-custom"
-              placeholder="min"
-              value={customTime}
-              onChange={(e) => {
-                setCustomTime(e.target.value);
-                const v = parseInt(e.target.value);
-                if (v > 0) setEstimatedMinutes(v);
-              }}
-              min="1"
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Priorytet</label>
-          <div className="priority-picker">
-            {(['LOW', 'MEDIUM', 'HIGH'] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={`priority-btn priority-btn--${p.toLowerCase()} ${priority === p ? 'priority-btn--active' : ''}`}
-                onClick={() => setPriority(p)}
-              >
-                {p === 'LOW' ? 'Niski' : p === 'MEDIUM' ? 'Średni' : 'Wysoki'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button type="button" className="btn-modal btn-modal--cancel" onClick={onClose}>Anuluj</button>
-          <button type="submit" className="btn-modal btn-modal--save">Dodaj task</button>
-        </div>
-      </motion.form>
-    </motion.div>
-  );
-}
-
-function CategoryFormWidget({
-  initialName = '',
-  initialColor = PASTEL_COLORS[0].hex,
-  submitLabel = 'Dodaj',
-  onSubmit,
-  onCancel,
-}: {
-  initialName?: string;
-  initialColor?: string;
-  submitLabel?: string;
-  onSubmit: (data: { name: string; color: string }) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState(initialName);
-  const [color, setColor] = useState(initialColor);
-  const [focused, setFocused] = useState(false);
-  const hasValue = name.length > 0;
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    onSubmit({ name: name.trim(), color });
-  }
-
-  return (
-    <motion.form
-      className="cat-form-widget"
-      initial={{ opacity: 0, height: 0, scale: 0.97 }}
-      animate={{ opacity: 1, height: 'auto', scale: 1 }}
-      exit={{ opacity: 0, height: 0, scale: 0.97 }}
-      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-      onSubmit={handleSubmit}
-    >
-      <div className="cat-form-inner">
-        <div className="cat-form-field">
-          <input
-            className="cat-form-input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            autoFocus
-          />
-          <label className={`cat-form-label ${focused || hasValue ? 'cat-form-label--float' : ''}`}>
-            Nazwa kategorii
-          </label>
-        </div>
-
-        <div className="cat-form-colors">
-          {PASTEL_COLORS.map((c) => (
-            <motion.button
-              key={c.hex}
-              type="button"
-              className={`cat-form-color ${color === c.hex ? 'cat-form-color--active' : ''}`}
-              style={{ backgroundColor: c.hex }}
-              onClick={() => setColor(c.hex)}
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.92 }}
-              title={c.name}
-            />
-          ))}
-        </div>
-
-        <div className="cat-form-actions">
-          <button type="button" className="cat-form-btn cat-form-btn--cancel" onClick={onCancel}>
-            Anuluj
-          </button>
-          <button type="submit" className="cat-form-btn cat-form-btn--submit" disabled={!name.trim()}>
-            {submitLabel}
-          </button>
-        </div>
-      </div>
-    </motion.form>
-  );
-}
+/* ── Main section ── */
 
 export function TodoSection({
   tasks,
@@ -508,23 +563,17 @@ export function TodoSection({
       </div>
 
       <AnimatePresence>
-        {showAddCategory && (
-          <CategoryFormWidget
-            onSubmit={(data) => {
-              onAddCategory(data);
-              setShowAddCategory(false);
-            }}
-            onCancel={() => setShowAddCategory(false)}
+        {addingTaskCat !== null && (
+          <TaskModal
+            categoryId={addingTaskCat}
+            onSubmit={onAddTask}
+            onClose={() => setAddingTaskCat(null)}
           />
         )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {addingTaskCat !== null && (
-          <AddTaskModal
-            categoryId={addingTaskCat}
-            onAdd={onAddTask}
-            onClose={() => setAddingTaskCat(null)}
+        {showAddCategory && (
+          <CategoryModal
+            onSubmit={(data) => onAddCategory(data)}
+            onClose={() => setShowAddCategory(false)}
           />
         )}
       </AnimatePresence>
