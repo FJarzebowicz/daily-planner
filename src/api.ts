@@ -214,6 +214,7 @@ export const thoughtApi = {
 // ── Recurring Event ──
 export interface RecurringEventResponse {
   id: number;
+  dayId: number;
   name: string;
   startTime: string;
   endTime: string;
@@ -221,18 +222,15 @@ export interface RecurringEventResponse {
 }
 
 export const recurringEventApi = {
-  getAll: () => request<RecurringEventResponse[]>('/recurring-events'),
-  create: (data: { name: string; startTime: string; endTime: string }) =>
-    request<RecurringEventResponse>('/recurring-events', {
+  getByDay: (date: string) => request<RecurringEventResponse[]>(`/days/${date}/recurring-events`),
+  create: (date: string, data: { name: string; startTime: string; endTime: string }) =>
+    request<RecurringEventResponse>(`/days/${date}/recurring-events`, {
       method: 'POST',
       body: JSON.stringify({ ...data, active: true }),
     }),
-  update: (id: number, data: Partial<RecurringEventResponse>) =>
-    request<RecurringEventResponse>(`/recurring-events/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
   delete: (id: number) => request<void>(`/recurring-events/${id}`, { method: 'DELETE' }),
+  copyFromPreviousDay: (date: string) =>
+    request<RecurringEventResponse[]>(`/days/${date}/recurring-events/copy-previous`, { method: 'POST' }),
 };
 
 // ── Backlog ──

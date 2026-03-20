@@ -8,14 +8,6 @@ interface MealsSectionProps {
   onUpdateMeal: (id: number, updates: { description: string; eaten: boolean }) => void;
 }
 
-const MEAL_ICONS: Record<string, string> = {
-  BREAKFAST: '🌅',
-  SECOND_BREAKFAST: '🥪',
-  LUNCH: '🍽️',
-  SNACK: '☕',
-  DINNER: '🌙',
-};
-
 const MEAL_ORDER: Record<string, number> = {
   BREAKFAST: 0,
   SECOND_BREAKFAST: 1,
@@ -37,12 +29,11 @@ export function MealsSection({ meals, closed, onUpdateMeal }: MealsSectionProps)
             <motion.div
               key={meal.id}
               className={`meal-card ${statusClass}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2, delay: i * 0.03 }}
             >
               <div className="meal-top">
-                <span className="meal-icon">{MEAL_ICONS[meal.slot] || '🍽️'}</span>
                 <span className="meal-type">{MEAL_SLOT_LABELS[meal.slot] || meal.slot}</span>
                 <motion.button
                   className={`toggle ${meal.eaten ? 'toggle--on' : ''}`}

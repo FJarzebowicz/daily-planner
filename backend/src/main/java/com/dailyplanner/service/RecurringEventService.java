@@ -1,36 +1,43 @@
 package com.dailyplanner.service;
 
 import com.dailyplanner.dto.RecurringEventDto;
+import com.dailyplanner.entity.Day;
 import com.dailyplanner.entity.RecurringEvent;
 import com.dailyplanner.entity.User;
 import com.dailyplanner.exception.ResourceNotFoundException;
+import com.dailyplanner.repository.DayRepository;
 import com.dailyplanner.repository.RecurringEventRepository;
 import com.dailyplanner.security.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class RecurringEventService {
 
     private final RecurringEventRepository repository;
+    private final DayService dayService;
+    private final DayRepository dayRepository;
 
-    public RecurringEventService(RecurringEventRepository repository) {
+    public RecurringEventService(RecurringEventRepository repository, DayService dayService, DayRepository dayRepository) {
         this.repository = repository;
+        this.dayService = dayService;
+        this.dayRepository = dayRepository;
     }
 
-    public List<RecurringEventDto> getAll() {
-        Long userId = SecurityUtil.getCurrentUserId();
-        return repository.findByUserIdOrderByStartTimeAsc(userId).stream()
+    public List<RecurringEventDto> getByDay(LocalDate date) {
+        Day day = dayService.getOrCreateDay(date);
+        return repository.findByDayIdOrderByStartTimeAsc(day.getId()).stream()
                 .map(RecurringEventDto::from).toList();
     }
 
     @Transactional
-    public RecurringEventDto create(RecurringEventDto dto) {
-        User user = SecurityUtil.getCurrentUser();
+    public RecurringEventDto create(LocalDate date, RecurringEventDto dto) {
+        Day day = dayService.getOrCreateDay(date);
         RecurringEvent event = new RecurringEvent();
-        event.setUser(user);
+        event.setDay(day);
         event.setName(dto.name());
         event.setStartTime(dto.startTime());
         event.setEndTime(dto.endTime());
@@ -39,23 +46,36 @@ public class RecurringEventService {
     }
 
     @Transactional
-    public RecurringEventDto update(Long id, RecurringEventDto dto) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        RecurringEvent event = repository.findByIdAndUserId(id, userId)
+    public void delete(Long id) {
+        RecurringEvent event = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Recurring event not found: " + id));
-        if (dto.name() != null) event.setName(dto.name());
-        if (dto.startTime() != null) event.setStartTime(dto.startTime());
-        if (dto.endTime() != null) event.setEndTime(dto.endTime());
-        event.setActive(dto.active());
-        return RecurringEventDto.from(repository.save(event));
+        Long userId = SecurityUtil.getCurrentUserId();
+        if (!event.getDay().getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Recurring event not found: " + id);
+        }
+        repository.delete(event);
     }
 
     @Transactional
-    public void delete(Long id) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        if (!repository.existsByIdAndUserId(id, userId)) {
-            throw new ResourceNotFoundException("Recurring event not found: " + id);
-        }
-        repository.deleteByIdAndUserId(id, userId);
+    public List<RecurringEventDto> copyFromPreviousDay(LocalDate date) {
+        User user = SecurityUtil.getCurrentUser();
+        LocalDate prevDate = date.minusDays(1);
+        Day currentDay = dayService.getOrCreateDay(date);
+
+        return dayRepository.findByUserIdAndDate(user.getId(), prevDate).map(prevDay -> {
+            List<RecurringEvent> prevEvents = repository.findByDayIdOrderByStartTimeAsc(prevDay.getId());
+            for (RecurringEvent src : prevEvents) {
+                RecurringEvent copy = new RecurringEvent();
+                copy.setDay(currentDay);
+                copy.setName(src.getName());
+                copy.setStartTime(src.getStartTime());
+                copy.setEndTime(src.getEndTime());
+                copy.setActive(src.isActive());
+                repository.save(copy);
+            }
+            return repository.findByDayIdOrderByStartTimeAsc(currentDay.getId()).stream()
+                    .map(RecurringEventDto::from).toList();
+        }).orElse(repository.findByDayIdOrderByStartTimeAsc(currentDay.getId()).stream()
+                .map(RecurringEventDto::from).toList());
     }
 }

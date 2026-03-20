@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DayData, Task, MealSlot, Note } from '../types';
 import { UserMenu } from './UserMenu';
+import { ThemeToggle } from './ThemeToggle';
 import {
   getPolishDayName,
   formatPolishDate,
@@ -74,10 +75,10 @@ function TimePicker({
           <motion.div
             className="tp-dropdown"
             ref={listRef}
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
           >
             {TIME_SLOTS.map((t) => (
               <button
@@ -98,31 +99,6 @@ function TimePicker({
   );
 }
 
-function CircleProgress({ value, size = 44, stroke = 4, color = '#10b981' }: { value: number; size?: number; stroke?: number; color?: string }) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
-  return (
-    <svg width={size} height={size} className="circle-progress">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f0f0f0" strokeWidth={stroke} />
-      <motion.circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={color}
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        initial={{ strokeDashoffset: circumference }}
-        animate={{ strokeDashoffset: offset }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-        style={{ transformOrigin: 'center', transform: 'rotate(-90deg)' }}
-      />
-    </svg>
-  );
-}
-
 export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, onUpdateSleep, onCloseDay, onNavigate }: HeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -130,11 +106,9 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
 
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t) => t.completed).length;
-  const taskPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   const totalMeals = meals.length;
   const eatenMeals = meals.filter((m) => m.eaten).length;
-  const mealPercent = totalMeals > 0 ? Math.round((eatenMeals / totalMeals) * 100) : 0;
 
   const productiveMinutes = tasks.filter((t) => t.completed).reduce((sum, t) => sum + t.estimatedMinutes, 0);
   const sleepMinutes = computeSleepMinutes(day.wakeUpTime, day.sleepTime);
@@ -153,32 +127,24 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
   }, []);
 
   return (
-    <motion.header
-      className="header"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      {/* Top row: navigation + times + close */}
+    <header className="header">
       <div className="header-top">
         <div className="header-nav">
-          <motion.button
+          <button
             className="nav-arrow"
             onClick={() => shiftDay(-1)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          </motion.button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
 
           <div className="header-date-block" ref={datePickerRef}>
             <button className="header-date-btn" onClick={() => setShowDatePicker(!showDatePicker)}>
               <motion.h1
                 className="header-day-name"
                 key={currentDate}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
               >
                 {getPolishDayName(date)}
               </motion.h1>
@@ -187,7 +153,7 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
                 key={currentDate + '-d'}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.05 }}
+                transition={{ duration: 0.25, delay: 0.05 }}
               >
                 {formatPolishDate(date)}
               </motion.p>
@@ -196,10 +162,10 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
               {showDatePicker && (
                 <motion.div
                   className="date-picker-dropdown"
-                  initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                  transition={{ duration: 0.15 }}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.12 }}
                 >
                   <input
                     type="date"
@@ -216,14 +182,12 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
             </AnimatePresence>
           </div>
 
-          <motion.button
+          <button
             className="nav-arrow"
             onClick={() => shiftDay(1)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-          </motion.button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
         </div>
 
         <div className="header-times">
@@ -234,65 +198,54 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
         <div className="header-right">
           <div className="header-close">
             {!day.closed ? (
-              <motion.button
+              <button
                 className="btn-close-day"
                 onClick={onCloseDay}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
               >
-                Zamknij dzień
-              </motion.button>
+                ZAMKNIJ DZIEN
+              </button>
             ) : (
-              <span className="day-closed-badge">Dzień zamknięty</span>
+              <span className="day-closed-badge">Zamkniety</span>
             )}
           </div>
+          <ThemeToggle />
           <UserMenu />
         </div>
       </div>
 
-      {/* Stats row */}
-      <motion.div
-        className="stats-row"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-      >
+      {/* Stats row — big editorial numbers */}
+      <div className="stats-row">
         <div className="stat-card">
-          <CircleProgress value={taskPercent} color="#10b981" />
           <div className="stat-info">
             <span className="stat-value">{doneTasks}/{totalTasks}</span>
             <span className="stat-label">Taski</span>
           </div>
         </div>
         <div className="stat-card">
-          <CircleProgress value={mealPercent} color="#f59e0b" />
           <div className="stat-info">
             <span className="stat-value">{eatenMeals}/{totalMeals}</span>
-            <span className="stat-label">Posiłki</span>
+            <span className="stat-label">Posilki</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">💭</div>
           <div className="stat-info">
             <span className="stat-value">{notesCount}</span>
             <span className="stat-label">Rozkminki</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">⚡</div>
           <div className="stat-info">
             <span className="stat-value">{formatMinutes(productiveMinutes)}</span>
-            <span className="stat-label">Produktywność</span>
+            <span className="stat-label">Produktywnosc</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🌙</div>
           <div className="stat-info">
             <span className="stat-value">{formatMinutes(sleepMinutes)}</span>
             <span className="stat-label">Sen</span>
           </div>
         </div>
-      </motion.div>
-    </motion.header>
+      </div>
+    </header>
   );
 }

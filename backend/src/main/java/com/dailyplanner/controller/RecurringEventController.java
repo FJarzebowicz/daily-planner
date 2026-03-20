@@ -6,10 +6,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/recurring-events")
+@RequestMapping("/api")
 public class RecurringEventController {
 
     private final RecurringEventService service;
@@ -18,25 +19,25 @@ public class RecurringEventController {
         this.service = service;
     }
 
-    @GetMapping
-    public List<RecurringEventDto> getAll() {
-        return service.getAll();
+    @GetMapping("/days/{date}/recurring-events")
+    public List<RecurringEventDto> getByDay(@PathVariable LocalDate date) {
+        return service.getByDay(date);
     }
 
-    @PostMapping
+    @PostMapping("/days/{date}/recurring-events")
     @ResponseStatus(HttpStatus.CREATED)
-    public RecurringEventDto create(@Valid @RequestBody RecurringEventDto dto) {
-        return service.create(dto);
+    public RecurringEventDto create(@PathVariable LocalDate date, @Valid @RequestBody RecurringEventDto dto) {
+        return service.create(date, dto);
     }
 
-    @PutMapping("/{id}")
-    public RecurringEventDto update(@PathVariable Long id, @Valid @RequestBody RecurringEventDto dto) {
-        return service.update(id, dto);
-    }
-
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/recurring-events/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+
+    @PostMapping("/days/{date}/recurring-events/copy-previous")
+    public List<RecurringEventDto> copyFromPreviousDay(@PathVariable LocalDate date) {
+        return service.copyFromPreviousDay(date);
     }
 }

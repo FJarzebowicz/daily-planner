@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RecurringEventRepository extends JpaRepository<RecurringEvent, Long> {
-    List<RecurringEvent> findByUserIdOrderByStartTimeAsc(Long userId);
-    Optional<RecurringEvent> findByIdAndUserId(Long id, Long userId);
-    boolean existsByIdAndUserId(Long id, Long userId);
-    void deleteByIdAndUserId(Long id, Long userId);
+    List<RecurringEvent> findByDayIdOrderByStartTimeAsc(Long dayId);
+    Optional<RecurringEvent> findByIdAndDayId(Long id, Long dayId);
+    boolean existsByIdAndDayId(Long id, Long dayId);
+    void deleteByIdAndDayId(Long id, Long dayId);
 }

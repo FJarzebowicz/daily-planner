@@ -8,6 +8,7 @@ interface EventsSectionProps {
   closed: boolean;
   onAddEvent: (data: { name: string; startTime: string; endTime: string }) => void;
   onDeleteEvent: (id: number) => void;
+  onCopyFromPreviousDay: () => void;
 }
 
 const TIME_SLOTS = generateTimeSlots(15);
@@ -65,7 +66,7 @@ function EventTimePicker({ value, onChange, label }: { value: string; onChange: 
   );
 }
 
-export function EventsSection({ events, closed, onAddEvent, onDeleteEvent }: EventsSectionProps) {
+export function EventsSection({ events, closed, onAddEvent, onDeleteEvent, onCopyFromPreviousDay }: EventsSectionProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', startTime: '10:00', endTime: '11:00' });
 
@@ -81,14 +82,25 @@ export function EventsSection({ events, closed, onAddEvent, onDeleteEvent }: Eve
       <div className="section-header">
         <h2 className="section-title">Stałe wydarzenia</h2>
         {!closed && (
-          <motion.button
-            className="btn-add-event"
-            onClick={() => setShowAdd(!showAdd)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-          </motion.button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <motion.button
+              className="btn-add-event"
+              onClick={onCopyFromPreviousDay}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Kopiuj z wczoraj"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+            </motion.button>
+            <motion.button
+              className="btn-add-event"
+              onClick={() => setShowAdd(!showAdd)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+            </motion.button>
+          </div>
         )}
       </div>
 

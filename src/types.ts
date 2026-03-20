@@ -75,6 +75,7 @@ export interface Note {
 
 export interface RecurringEvent {
   id: number;
+  dayId: number;
   name: string;
   startTime: string;
   endTime: string;

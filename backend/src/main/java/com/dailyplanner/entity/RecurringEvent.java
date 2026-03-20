@@ -12,8 +12,8 @@ public class RecurringEvent {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "day_id", nullable = false)
+    private Day day;
 
     @Column(nullable = false)
     private String name;
@@ -34,8 +34,8 @@ public class RecurringEvent {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public Day getDay() { return day; }
+    public void setDay(Day day) { this.day = day; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getStartTime() { return startTime; }

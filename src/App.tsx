@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent } from './types';
 import { formatDate } from './utils';
 import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi } from './api';
@@ -13,6 +13,7 @@ import {
   DragOverlay,
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
 import { TodoSection } from './components/TodoSection';
 import { MealsSection } from './components/MealsSection';
@@ -43,6 +44,7 @@ function App() {
   const [backlog, setBacklog] = useState<BacklogTask[]>([]);
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const slideDir = useRef(0);
 
   // DnD state
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
@@ -56,11 +58,6 @@ function App() {
   );
 
   const loadDay = useCallback(async (date: string) => {
-    setLoading(true);
-    setTasks([]);
-    setMeals([]);
-    setNotes([]);
-    setDay(null);
     try {
       const [dayData, cats, dayTasks, dayMeals, dayNotes, events, backlogTasks] = await Promise.all([
         dayApi.get(date),
@@ -68,7 +65,7 @@ function App() {
         taskApi.getByDay(date),
         mealApi.getByDay(date),
         thoughtApi.getByDay(date),
-        recurringEventApi.getAll(),
+        recurringEventApi.getByDay(date),
         backlogApi.getAll(),
       ]);
       setDay(dayData as DayData);
@@ -97,7 +94,8 @@ function App() {
   }, [tasks, currentTaskId]);
 
   function navigateToDate(date: string) {
-    if (!date) return;
+    if (!date || date === currentDate) return;
+    slideDir.current = date > currentDate ? 1 : -1;
     setCurrentDate(date);
   }
 
@@ -289,13 +287,18 @@ function App() {
 
   // ── Recurring Events ──
   async function addEvent(data: { name: string; startTime: string; endTime: string }) {
-    const event = await recurringEventApi.create(data);
+    const event = await recurringEventApi.create(currentDate, data);
     setRecurringEvents((prev) => [...prev, event].sort((a, b) => a.startTime.localeCompare(b.startTime)));
   }
 
   async function deleteEvent(id: number) {
     await recurringEventApi.delete(id);
     setRecurringEvents((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  async function copyEventsFromPreviousDay() {
+    const events = await recurringEventApi.copyFromPreviousDay(currentDate);
+    setRecurringEvents(events);
   }
 
   // ── Backlog ──
@@ -320,14 +323,14 @@ function App() {
     ? categories.find((c) => c.id === draggingTask.categoryId)
     : null;
 
-  if (loading || !day) {
+  if (loading && !day) {
     return <div className="app loading">Ładowanie...</div>;
   }
 
   return (
     <div className="app">
       <Header
-        day={day}
+        day={day!}
         tasks={tasks}
         meals={meals}
         notes={notes}
@@ -345,31 +348,44 @@ function App() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <main className="main">
-          <TodoSection
-            tasks={tasks}
-            categories={categories}
-            closed={day.closed}
-            onToggleTask={toggleTask}
-            onDeleteTask={deleteTask}
-            onAddTask={addTask}
-            onReorderTasks={reorderTasks}
-            onMoveToBacklog={moveTaskToBacklog}
-            onAddCategory={addCategory}
-            onEditCategory={editCategory}
-            onDeleteCategory={deleteCategory}
-            currentTaskId={currentTaskId}
-            onSetCurrentTask={setCurrentTaskId}
-            isOverCW={isOverCW}
-          />
-          <div className="grid-bottom">
-            <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
-            <div className="grid-bottom-right">
-              <NotesSection notes={notes} closed={day.closed} onAddNote={addNote} onDeleteNote={deleteNote} />
-              <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} />
-            </div>
-          </div>
-        </main>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.main
+            key={currentDate}
+            className="main"
+            initial={{ opacity: 0, x: slideDir.current * 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: slideDir.current * -24 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+          >
+            {day && (
+              <>
+                <TodoSection
+                  tasks={tasks}
+                  categories={categories}
+                  closed={day.closed}
+                  onToggleTask={toggleTask}
+                  onDeleteTask={deleteTask}
+                  onAddTask={addTask}
+                  onReorderTasks={reorderTasks}
+                  onMoveToBacklog={moveTaskToBacklog}
+                  onAddCategory={addCategory}
+                  onEditCategory={editCategory}
+                  onDeleteCategory={deleteCategory}
+                  currentTaskId={currentTaskId}
+                  onSetCurrentTask={setCurrentTaskId}
+                  isOverCW={isOverCW}
+                />
+                <div className="grid-bottom">
+                  <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
+                  <div className="grid-bottom-right">
+                    <NotesSection notes={notes} closed={day.closed} onAddNote={addNote} onDeleteNote={deleteNote} />
+                    <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} onCopyFromPreviousDay={copyEventsFromPreviousDay} />
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.main>
+        </AnimatePresence>
 
         <Backlog
           open={backlogOpen}
