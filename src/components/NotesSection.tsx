@@ -26,7 +26,7 @@ export function NotesSection({ notes, closed, onAddNote, onDeleteNote }: NotesSe
   }
 
   return (
-    <section className="section">
+    <section className="section section--blue">
       <div className="section-header">
         <h2 className="section-title">Rozkminki</h2>
         <span className="section-count">{notes.length}</span>

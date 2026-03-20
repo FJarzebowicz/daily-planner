@@ -498,7 +498,7 @@ function SortableTask({
               }
             }}
           >
-            {orderNum}
+            {String(orderNum).padStart(2, '0')}.
           </motion.span>
         )}
         <span className={`tc-title ${task.completed ? 'tc-title--done' : ''}`}>{task.title}</span>
@@ -607,7 +607,6 @@ function CategoryCard({
     <>
       <motion.div
         className="category-card"
-        style={{ borderLeft: `3px solid ${category.color}` }}
         layout
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

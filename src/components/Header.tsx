@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DayData, Task, MealSlot, Note } from '../types';
 import { UserMenu } from './UserMenu';
-import { ThemeToggle } from './ThemeToggle';
 import {
   getPolishDayName,
   formatPolishDate,
@@ -148,13 +147,13 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
   return (
     <header className="header">
       <div className="header-top">
-        <div className="header-nav">
-          <button
-            className="nav-arrow"
-            onClick={() => shiftDay(-1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          </button>
+        {/* Left: nav arrows + day name + date */}
+        <div className="header-left">
+          <div className="header-nav">
+            <button className="nav-arrow" onClick={() => shiftDay(-1)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+          </div>
 
           <div className="header-date-block" ref={datePickerRef}>
             <button className="header-date-btn" onClick={() => setShowDatePicker(!showDatePicker)}>
@@ -201,71 +200,47 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
             </AnimatePresence>
           </div>
 
-          <button
-            className="nav-arrow"
-            onClick={() => shiftDay(1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-          </button>
+          <div className="header-nav">
+            <button className="nav-arrow" onClick={() => shiftDay(1)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
+          </div>
         </div>
 
-        <div className="header-times">
-          <TimePicker value={day.wakeUpTime} onChange={onUpdateWakeUp} label="Wstanie" disabled={day.closed} />
-          <TimePicker value={day.sleepTime} onChange={onUpdateSleep} label="Sen" disabled={day.closed} />
-        </div>
-
+        {/* Right: stats index + times + close day + user */}
         <div className="header-right">
-          <div className="header-close">
-            {!day.closed ? (
-              <button
-                className={`btn-close-day ${holdProgress ? 'btn-close-day--holding' : ''}`}
-                onMouseDown={startHold}
-                onMouseUp={cancelHold}
-                onMouseLeave={cancelHold}
-                onTouchStart={startHold}
-                onTouchEnd={cancelHold}
-              >
-                {holdProgress ? 'PRZYTRZYMAJ...' : 'ZAMKNIJ DZIEN'}
-              </button>
-            ) : (
-              <span className="day-closed-badge">Zamkniety</span>
-            )}
+          <div className="stats-index">
+            <strong>{doneTasks}/{totalTasks}</strong> Taski &middot;{' '}
+            <strong>{eatenMeals}/{totalMeals}</strong> Posilki &middot;{' '}
+            <strong>{notesCount}</strong> Rozkminki<br />
+            <strong>{formatMinutes(productiveMinutes)}</strong> Produktywnosc &middot;{' '}
+            <strong>{formatMinutes(sleepMinutes)}</strong> Sen
           </div>
-          <ThemeToggle />
-          <UserMenu />
-        </div>
-      </div>
 
-      {/* Stats row — big editorial numbers */}
-      <div className="stats-row">
-        <div className="stat-card">
-          <div className="stat-info">
-            <span className="stat-value">{doneTasks}/{totalTasks}</span>
-            <span className="stat-label">Taski</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <span className="stat-value">{eatenMeals}/{totalMeals}</span>
-            <span className="stat-label">Posilki</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <span className="stat-value">{notesCount}</span>
-            <span className="stat-label">Rozkminki</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <span className="stat-value">{formatMinutes(productiveMinutes)}</span>
-            <span className="stat-label">Produktywnosc</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <span className="stat-value">{formatMinutes(sleepMinutes)}</span>
-            <span className="stat-label">Sen</span>
+          <div className="header-controls">
+            <div className="header-times">
+              <TimePicker value={day.wakeUpTime} onChange={onUpdateWakeUp} label="Wstanie" disabled={day.closed} />
+              <TimePicker value={day.sleepTime} onChange={onUpdateSleep} label="Sen" disabled={day.closed} />
+            </div>
+
+            <div className="header-close">
+              {!day.closed ? (
+                <button
+                  className={`btn-close-day ${holdProgress ? 'btn-close-day--holding' : ''}`}
+                  onMouseDown={startHold}
+                  onMouseUp={cancelHold}
+                  onMouseLeave={cancelHold}
+                  onTouchStart={startHold}
+                  onTouchEnd={cancelHold}
+                >
+                  {holdProgress ? 'PRZYTRZYMAJ...' : 'ZAMKNIJ DZIEN'}
+                </button>
+              ) : (
+                <span className="day-closed-badge">Zamkniety</span>
+              )}
+            </div>
+
+            <UserMenu />
           </div>
         </div>
       </div>

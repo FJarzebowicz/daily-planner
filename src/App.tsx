@@ -344,9 +344,6 @@ function App() {
     return <div className="app loading">Ładowanie...</div>;
   }
 
-  // Compute day-of-year for watermark
-  const dayOfYear = Math.ceil((new Date(currentDate).getTime() - new Date(new Date(currentDate).getFullYear(), 0, 0).getTime()) / 86400000);
-
   return (
     <div className="app">
       <CustomCursor />
@@ -367,7 +364,7 @@ function App() {
                   '--x': `${Math.random() * 100}vw`,
                   '--delay': `${Math.random() * 0.5}s`,
                   '--rotation': `${Math.random() * 720 - 360}deg`,
-                  '--color': ['#4F46E5', '#7C3AED', '#84CC16', '#F59E0B', '#EF4444', '#EC4899'][i % 6],
+                  '--color': ['#FF3B00', '#2538EB', '#000000', '#FF3B00', '#2538EB', '#000000'][i % 6],
                 } as React.CSSProperties} />
               ))}
             </div>
@@ -383,9 +380,6 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Day-of-year watermark */}
-      <div className="watermark-number" aria-hidden="true">{String(dayOfYear).padStart(3, '0')}</div>
 
       <Header
         day={day!}

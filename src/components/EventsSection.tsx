@@ -78,7 +78,7 @@ export function EventsSection({ events, closed, onAddEvent, onDeleteEvent, onCop
   }
 
   return (
-    <section className="section">
+    <section className="section section--dark">
       <div className="section-header">
         <h2 className="section-title">Stałe wydarzenia</h2>
         {!closed && (
