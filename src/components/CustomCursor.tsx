@@ -26,8 +26,16 @@ export function CustomCursor() {
 
     function onOver(e: MouseEvent) {
       const target = e.target as HTMLElement;
-      const interactive = target.closest('button, a, input, textarea, select, [role="button"], .tc, .meal-card, .category-card, .nav-arrow, .backlog-tab, label');
+
+      // Detect interactive elements
+      const interactive = target.closest(
+        'button, a, input, textarea, select, [role="button"], .tc, .meal-card, .category-card, .nav-arrow, .backlog-tab, label'
+      );
       dot!.classList.toggle('cursor-dot--hover', !!interactive);
+
+      // Detect dark/blue sections for color inversion
+      const darkSection = target.closest('.section--dark, .section--blue');
+      dot!.classList.toggle('cursor-dot--invert', !!darkSection);
     }
 
     function onClick(e: MouseEvent) {
