@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const TABS = [
   { path: '/', label: 'PLANNER' },
   { path: '/shopping', label: 'ZAKUPY' },
+  { path: '/food', label: 'BAZA JEDZENIA' },
 ] as const;
 
 export function NavTabs() {

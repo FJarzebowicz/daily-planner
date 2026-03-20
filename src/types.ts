@@ -98,6 +98,30 @@ export interface ShoppingItem {
   createdAt: string;
 }
 
+export interface FoodCategory {
+  id: number;
+  name: string;
+}
+
+export interface FoodVariant {
+  id: number;
+  name: string;
+  description: string | null;
+  preparation: string | null;
+}
+
+export interface Food {
+  id: number;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  link: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  createdAt: string;
+  variants: FoodVariant[] | null;
+}
+
 export interface DayData {
   id: number;
   date: string;

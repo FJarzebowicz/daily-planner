@@ -2077,3 +2077,446 @@
     border-left: none;
   }
 }
+
+/* ===== FOOD DATABASE PAGE ===== */
+.fd-app { padding-bottom: 80px; }
+.fd-main { max-width: 1000px; }
+
+/* Add food form */
+.fd-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+/* Shared form elements */
+.fd-edit-input {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: transparent;
+  outline: none;
+}
+.fd-edit-input:focus { border-color: var(--text); }
+
+.fd-edit-textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: transparent;
+  outline: none;
+  resize: vertical;
+}
+.fd-edit-textarea:focus { border-color: var(--text); }
+
+.fd-edit-select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  background: transparent;
+  outline: none;
+}
+
+.fd-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Buttons */
+.fd-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text);
+  transition: all var(--transition-fast);
+}
+.fd-btn:hover {
+  background: var(--text);
+  color: #fff;
+}
+.fd-btn--primary {
+  background: var(--text);
+  color: #fff;
+}
+.fd-btn--primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.fd-btn--danger:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.fd-btn--small {
+  padding: 4px 12px;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+/* Card grid */
+.fd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.fd-card {
+  border: 1px solid var(--border);
+  transition: border-color var(--transition-fast);
+  overflow: hidden;
+}
+.fd-card:hover {
+  border-color: var(--text);
+}
+
+.fd-card-image {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+.fd-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fd-card-body {
+  padding: 14px;
+}
+
+.fd-card-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.fd-card-cat {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.fd-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 8px 0 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Detail overlay */
+.fd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+
+.fd-detail {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+}
+
+.fd-detail-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 12px 0;
+}
+
+.fd-detail-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+.fd-detail-close:hover { color: var(--text); }
+
+.fd-detail-image {
+  width: 100%;
+  height: 240px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F5F5F5;
+  overflow: hidden;
+}
+.fd-detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fd-detail-image-placeholder {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-faint);
+}
+
+.fd-detail-body {
+  padding: 24px;
+}
+
+.fd-detail-name {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.fd-detail-cat {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.fd-detail-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.fd-detail-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-decoration: none;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--accent);
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.fd-detail-link:hover { opacity: 0.7; }
+
+.fd-detail-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.fd-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+/* Variants */
+.fd-variants {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.fd-variants-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.fd-variants-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0;
+}
+
+.fd-variants-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.fd-variant {
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.fd-variant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  transition: background var(--transition-fast);
+}
+.fd-variant-header:hover { background: #F5F5F5; }
+
+.fd-variant-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fd-variant-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.fd-variant-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.fd-variant-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 12px 0 0;
+}
+
+.fd-variant-prep {
+  margin-top: 12px;
+}
+
+.fd-variant-prep-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.fd-variant-prep p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.fd-variant-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+/* ===== MEAL AUTOCOMPLETE ===== */
+.meal-input-wrap {
+  position: relative;
+}
+
+.meal-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meal-food-link {
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  display: flex;
+}
+.meal-food-link:hover { color: var(--accent); }
+
+.meal-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.meal-suggestion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  transition: background var(--transition-fast);
+}
+.meal-suggestion:last-child { border-bottom: none; }
+.meal-suggestion:hover { background: #F5F5F5; }
+
+.meal-suggestion-name {
+  font-weight: 500;
+}
+
+.meal-suggestion-cat {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.meal-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+  align-items: center;
+}
+
+.meal-variants-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.meal-variant-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+.meal-variant-btn:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+/* Food responsive */
+@media (max-width: 600px) {
+  .fd-grid {
+    grid-template-columns: 1fr;
+  }
+  .fd-detail {
+    margin: 0;
+    max-width: 100%;
+  }
+}

@@ -271,6 +271,77 @@ export const shoppingApi = {
   deleteBought: () => request<void>('/shopping/bought', { method: 'DELETE' }),
 };
 
+// ── File upload helper ──
+async function uploadFile<T>(url: string, file: File): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE}${url}`, { method: 'POST', headers, body: form });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Upload failed');
+  }
+  return res.json();
+}
+
+// ── Food Category ──
+export interface FoodCategoryResponse {
+  id: number;
+  name: string;
+}
+
+export const foodCategoryApi = {
+  getAll: () => request<FoodCategoryResponse[]>('/food-categories'),
+  create: (data: { name: string }) =>
+    request<FoodCategoryResponse>('/food-categories', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { name: string }) =>
+    request<FoodCategoryResponse>(`/food-categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => request<void>(`/food-categories/${id}`, { method: 'DELETE' }),
+};
+
+// ── Food ──
+export interface FoodResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  link: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  createdAt: string;
+  variants: FoodVariantResponse[] | null;
+}
+
+export interface FoodVariantResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  preparation: string | null;
+}
+
+export const foodApi = {
+  getAll: (categoryId?: number) =>
+    request<FoodResponse[]>(categoryId ? `/foods?categoryId=${categoryId}` : '/foods'),
+  getById: (id: number) => request<FoodResponse>(`/foods/${id}`),
+  search: (q: string) => request<FoodResponse[]>(`/foods/search?q=${encodeURIComponent(q)}`),
+  create: (data: { name: string; description?: string; link?: string; categoryId?: number | null }) =>
+    request<FoodResponse>('/foods', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { name: string; description?: string; link?: string; categoryId?: number | null }) =>
+    request<FoodResponse>(`/foods/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  uploadImage: (id: number, file: File) => uploadFile<FoodResponse>(`/foods/${id}/image`, file),
+  delete: (id: number) => request<void>(`/foods/${id}`, { method: 'DELETE' }),
+};
+
+export const foodVariantApi = {
+  getAll: (foodId: number) => request<FoodVariantResponse[]>(`/foods/${foodId}/variants`),
+  create: (foodId: number, data: { name: string; description?: string; preparation?: string }) =>
+    request<FoodVariantResponse>(`/foods/${foodId}/variants`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (foodId: number, id: number, data: { name: string; description?: string; preparation?: string }) =>
+    request<FoodVariantResponse>(`/foods/${foodId}/variants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (foodId: number, id: number) => request<void>(`/foods/${foodId}/variants/${id}`, { method: 'DELETE' }),
+};
+
 // ── Backlog ──
 export interface BacklogTaskResponse {
   id: number;
