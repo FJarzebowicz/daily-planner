@@ -62,7 +62,7 @@ const overlayVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.95, y: 16 },
-  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] } },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
   exit: { opacity: 0, scale: 0.95, y: 16, transition: { duration: 0.18 } },
 };
 
