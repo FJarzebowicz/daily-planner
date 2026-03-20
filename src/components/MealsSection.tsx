@@ -16,6 +16,14 @@ const MEAL_ICONS: Record<string, string> = {
   DINNER: '🌙',
 };
 
+const MEAL_ORDER: Record<string, number> = {
+  BREAKFAST: 0,
+  SECOND_BREAKFAST: 1,
+  LUNCH: 2,
+  SNACK: 3,
+  DINNER: 4,
+};
+
 export function MealsSection({ meals, closed, onUpdateMeal }: MealsSectionProps) {
   return (
     <section className="section">
@@ -23,7 +31,7 @@ export function MealsSection({ meals, closed, onUpdateMeal }: MealsSectionProps)
         <h2 className="section-title">Jedzenie</h2>
       </div>
       <div className="meals-grid">
-        {meals.map((meal, i) => {
+        {[...meals].sort((a, b) => (MEAL_ORDER[a.slot] ?? 99) - (MEAL_ORDER[b.slot] ?? 99)).map((meal, i) => {
           const statusClass = meal.eaten ? 'meal--eaten' : closed ? 'meal--missed' : '';
           return (
             <motion.div

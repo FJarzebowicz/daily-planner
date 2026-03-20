@@ -1794,6 +1794,27 @@
 }
 .backlog-move-cat:hover { filter: brightness(0.9); transform: translateY(-1px); }
 
+/* Backlog DnD drop zone */
+.backlog-tab--drag-hint {
+  border-color: var(--accent);
+  animation: backlog-hint-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes backlog-hint-pulse {
+  0%, 100% { box-shadow: var(--shadow-md); }
+  50% { box-shadow: var(--shadow-md), 0 0 0 4px var(--accent-glow); }
+}
+
+.backlog-tab--drop-active {
+  border-color: var(--accent) !important;
+  background: var(--accent-light) !important;
+  box-shadow: 0 0 0 4px var(--accent-glow), var(--shadow-lg) !important;
+}
+
+.backlog-sidebar--drop-active {
+  box-shadow: -12px 0 40px rgba(79,70,229,0.15), inset 0 0 0 2px var(--accent) !important;
+}
+
 /* ============================================================
    AUTH & PROFILE
    ============================================================ */

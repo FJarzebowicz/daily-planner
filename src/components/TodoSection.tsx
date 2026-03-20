@@ -1,16 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
-  DragOverlay,
-} from '@dnd-kit/core';
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task, Category } from '../types';
@@ -28,6 +19,9 @@ interface TodoSectionProps {
   onAddCategory: (data: { name: string; color: string }) => void;
   onEditCategory: (id: number, updates: Partial<Category>) => void;
   onDeleteCategory: (id: number) => void;
+  currentTaskId: number | null;
+  onSetCurrentTask: (id: number | null) => void;
+  isOverCW: boolean;
 }
 
 /* ── helpers ── */
@@ -546,19 +540,6 @@ function SortableTask({
   );
 }
 
-/* ── Drag overlay ghost ── */
-
-function TaskDragOverlay({ task, catColor }: { task: Task; catColor: string }) {
-  return (
-    <div className="tc tc-ghost" style={{ borderColor: catColor }}>
-      <div className="tc-top">
-        <span className="tc-order" style={{ backgroundColor: catColor, color: darken(catColor) }}>⋮</span>
-        <span className="tc-title">{task.title}</span>
-      </div>
-    </div>
-  );
-}
-
 /* ── Category card ── */
 
 function CategoryCard({
@@ -670,83 +651,30 @@ export function TodoSection({
   onToggleTask,
   onDeleteTask,
   onAddTask,
-  onReorderTasks,
   onMoveToBacklog,
   onAddCategory,
   onEditCategory,
   onDeleteCategory,
+  currentTaskId,
+  onSetCurrentTask,
+  isOverCW,
 }: TodoSectionProps) {
   const [addingTaskCat, setAddingTaskCat] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
-  const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
-  const [draggingTask, setDraggingTask] = useState<Task | null>(null);
-  const [isOverCW, setIsOverCW] = useState(false);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const currentTask = currentTaskId ? tasks.find((t) => t.id === currentTaskId) ?? null : null;
   const currentCategory = currentTask ? categories.find((c) => c.id === currentTask.categoryId) ?? null : null;
 
-  useEffect(() => {
-    if (currentTaskId && !tasks.find((t) => t.id === currentTaskId)) {
-      setCurrentTaskId(null);
-    }
-  }, [tasks, currentTaskId]);
-
-  function handleDragStart(event: DragStartEvent) {
-    const task = tasks.find((t) => t.id === event.active.id);
-    if (task) setDraggingTask(task);
-  }
-
-  function handleDragOver(event: any) {
-    setIsOverCW(event.over?.id === 'currently-working');
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setDraggingTask(null);
-    setIsOverCW(false);
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeTask = tasks.find((t) => t.id === active.id);
-    if (!activeTask) return;
-
-    if (over.id === 'currently-working') {
-      if (!activeTask.completed) {
-        setCurrentTaskId(activeTask.id);
-      }
-      return;
-    }
-
-    if (active.id !== over.id) {
-      const overTask = tasks.find((t) => t.id === over.id);
-      if (overTask && activeTask.categoryId === overTask.categoryId) {
-        const catTasks = tasks
-          .filter((t) => t.categoryId === activeTask.categoryId)
-          .sort((a, b) => a.sortOrder - b.sortOrder);
-        const oldIdx = catTasks.findIndex((t) => t.id === active.id);
-        const newIdx = catTasks.findIndex((t) => t.id === over.id);
-        if (oldIdx !== -1 && newIdx !== -1) {
-          onReorderTasks(activeTask.categoryId, oldIdx, newIdx);
-        }
-      }
-    }
-  }
-
   function handleCWDone() {
     if (currentTaskId) {
       onToggleTask(currentTaskId);
-      setCurrentTaskId(null);
+      onSetCurrentTask(null);
     }
   }
 
   function handleCWPutBack() {
-    setCurrentTaskId(null);
+    onSetCurrentTask(null);
   }
-
-  const draggingCategory = draggingTask
-    ? categories.find((c) => c.id === draggingTask.categoryId)
-    : null;
 
   return (
     <section className="section todo-section">
@@ -765,49 +693,35 @@ export function TodoSection({
         )}
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        {!closed && (
-          <CurrentlyWorkingBox
-            task={currentTask}
-            category={currentCategory}
-            closed={closed}
-            onDone={handleCWDone}
-            onPutBack={handleCWPutBack}
-            isOver={isOverCW}
-          />
-        )}
+      {!closed && (
+        <CurrentlyWorkingBox
+          task={currentTask}
+          category={currentCategory}
+          closed={closed}
+          onDone={handleCWDone}
+          onPutBack={handleCWPutBack}
+          isOver={isOverCW}
+        />
+      )}
 
-        <div className="categories-grid">
-          <AnimatePresence mode="popLayout">
-            {categories.map((cat) => (
-              <CategoryCard
-                key={cat.id}
-                category={cat}
-                tasks={tasks.filter((t) => t.categoryId === cat.id).sort((a, b) => a.sortOrder - b.sortOrder)}
-                closed={closed}
-                onToggleTask={onToggleTask}
-                onDeleteTask={onDeleteTask}
-                onMoveToBacklog={onMoveToBacklog}
-                onEditCategory={onEditCategory}
-                onDeleteCategory={onDeleteCategory}
-                onAddTask={(catId) => setAddingTaskCat(catId)}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-
-        <DragOverlay dropAnimation={null}>
-          {draggingTask && draggingCategory && (
-            <TaskDragOverlay task={draggingTask} catColor={draggingCategory.color} />
-          )}
-        </DragOverlay>
-      </DndContext>
+      <div className="categories-grid">
+        <AnimatePresence mode="popLayout">
+          {categories.map((cat) => (
+            <CategoryCard
+              key={cat.id}
+              category={cat}
+              tasks={tasks.filter((t) => t.categoryId === cat.id).sort((a, b) => a.sortOrder - b.sortOrder)}
+              closed={closed}
+              onToggleTask={onToggleTask}
+              onDeleteTask={onDeleteTask}
+              onMoveToBacklog={onMoveToBacklog}
+              onEditCategory={onEditCategory}
+              onDeleteCategory={onDeleteCategory}
+              onAddTask={(catId) => setAddingTaskCat(catId)}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
 
       <AnimatePresence>
         {addingTaskCat !== null && (

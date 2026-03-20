@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDroppable } from '@dnd-kit/core';
 import type { BacklogTask, Category } from '../types';
 import { TIME_PRESETS } from '../types';
 
@@ -11,13 +12,18 @@ interface BacklogProps {
   onDeleteTask: (id: number) => void;
   onMoveToDay: (task: BacklogTask, categoryId: number) => void;
   categories: Category[];
+  isDragging?: boolean;
+  isOverBacklog?: boolean;
 }
 
-export function Backlog({ open, onToggle, backlog, onAddTask, onDeleteTask, onMoveToDay, categories }: BacklogProps) {
+export function Backlog({ open, onToggle, backlog, onAddTask, onDeleteTask, onMoveToDay, categories, isDragging, isOverBacklog }: BacklogProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [movingTask, setMovingTask] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', description: '', estimatedMinutes: 30, priority: 'MEDIUM' });
   const [customTime, setCustomTime] = useState('');
+
+  const { setNodeRef: setTabRef } = useDroppable({ id: 'backlog-drop-tab' });
+  const { setNodeRef: setSidebarRef } = useDroppable({ id: 'backlog-drop-sidebar' });
 
   function addTask() {
     if (!form.name.trim()) return;
@@ -35,11 +41,15 @@ export function Backlog({ open, onToggle, backlog, onAddTask, onDeleteTask, onMo
   const priorityLabels: Record<string, string> = { LOW: 'Niski', MEDIUM: 'Średni', HIGH: 'Wysoki' };
   const priorityColors: Record<string, string> = { LOW: '#94a3b8', MEDIUM: '#f59e0b', HIGH: '#ef4444' };
 
+  const tabClass = `backlog-tab ${isDragging ? 'backlog-tab--drag-hint' : ''} ${isOverBacklog ? 'backlog-tab--drop-active' : ''}`;
+  const sidebarClass = `backlog-sidebar ${isOverBacklog ? 'backlog-sidebar--drop-active' : ''}`;
+
   return (
     <>
       {/* Toggle tab */}
       <motion.button
-        className="backlog-tab"
+        ref={setTabRef}
+        className={tabClass}
         onClick={onToggle}
         whileHover={{ x: open ? 0 : -4 }}
         animate={{ right: open ? 380 : 0 }}
@@ -64,7 +74,8 @@ export function Backlog({ open, onToggle, backlog, onAddTask, onDeleteTask, onMo
               onClick={onToggle}
             />
             <motion.aside
-              className="backlog-sidebar"
+              ref={setSidebarRef}
+              className={sidebarClass}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -80,7 +91,7 @@ export function Backlog({ open, onToggle, backlog, onAddTask, onDeleteTask, onMo
                 </button>
               </div>
 
-              <p className="backlog-desc">Taski bez terminu. Kliknij, aby przenieść na dzień.</p>
+              <p className="backlog-desc">Taski bez terminu. Kliknij, aby przenieść na dzień. Przeciągnij task tutaj z kategorii.</p>
 
               {/* Add form */}
               {!showAdd ? (

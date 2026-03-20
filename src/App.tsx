@@ -2,6 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent } from './types';
 import { formatDate } from './utils';
 import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi } from './api';
+import {
+  DndContext,
+  closestCenter,
+  pointerWithin,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { Header } from './components/Header';
 import { TodoSection } from './components/TodoSection';
 import { MealsSection } from './components/MealsSection';
@@ -9,6 +20,16 @@ import { NotesSection } from './components/NotesSection';
 import { EventsSection } from './components/EventsSection';
 import { Backlog } from './components/Backlog';
 import './App.css';
+
+/* Custom collision detection: prioritize special drop zones, fall back to closestCenter for tasks */
+function customCollisionDetection(args: Parameters<typeof closestCenter>[0]) {
+  const pointerCollisions = pointerWithin(args);
+  const specialZone = pointerCollisions.find(
+    (c) => c.id === 'backlog-drop-tab' || c.id === 'backlog-drop-sidebar' || c.id === 'currently-working',
+  );
+  if (specialZone) return [specialZone];
+  return closestCenter(args);
+}
 
 function App() {
   const todayStr = formatDate(new Date());
@@ -23,8 +44,23 @@ function App() {
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // DnD state
+  const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
+  const [draggingTask, setDraggingTask] = useState<Task | null>(null);
+  const [isOverCW, setIsOverCW] = useState(false);
+  const [isOverBacklog, setIsOverBacklog] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  );
+
   const loadDay = useCallback(async (date: string) => {
     setLoading(true);
+    setTasks([]);
+    setMeals([]);
+    setNotes([]);
+    setDay(null);
     try {
       const [dayData, cats, dayTasks, dayMeals, dayNotes, events, backlogTasks] = await Promise.all([
         dayApi.get(date),
@@ -52,6 +88,13 @@ function App() {
   useEffect(() => {
     loadDay(currentDate);
   }, [currentDate, loadDay]);
+
+  // Clear currentTaskId when the task disappears
+  useEffect(() => {
+    if (currentTaskId && !tasks.find((t) => t.id === currentTaskId)) {
+      setCurrentTaskId(null);
+    }
+  }, [tasks, currentTaskId]);
 
   function navigateToDate(date: string) {
     if (!date) return;
@@ -120,7 +163,6 @@ function App() {
     reordered.splice(newIndex, 0, moved);
     const updatedTasks = reordered.map((t, i) => ({ ...t, sortOrder: i }));
 
-    // Optimistic update
     const otherTasks = tasks.filter((t) => t.categoryId !== categoryId);
     setTasks([...otherTasks, ...updatedTasks]);
 
@@ -139,10 +181,99 @@ function App() {
     setBacklog((prev) => [...prev, bt]);
   }
 
+  async function moveTaskToCategory(task: Task, newCategoryId: number, insertBeforeTaskId: number) {
+    const newCatTasks = tasks
+      .filter((t) => t.categoryId === newCategoryId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const insertIdx = newCatTasks.findIndex((t) => t.id === insertBeforeTaskId);
+    const reordered = [...newCatTasks];
+    reordered.splice(insertIdx >= 0 ? insertIdx : reordered.length, 0, { ...task, categoryId: newCategoryId });
+    const newOrder = reordered.map((t, i) => ({ ...t, sortOrder: i }));
+
+    const oldCatTasks = tasks
+      .filter((t) => t.categoryId === task.categoryId && t.id !== task.id)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((t, i) => ({ ...t, sortOrder: i }));
+
+    const otherTasks = tasks.filter(
+      (t) => t.id !== task.id && t.categoryId !== newCategoryId && t.categoryId !== task.categoryId,
+    );
+    setTasks([...otherTasks, ...oldCatTasks, ...newOrder]);
+
+    try {
+      await taskApi.update(task.id, { ...task, categoryId: newCategoryId });
+      await taskApi.reorder(newOrder.map((t) => t.id));
+    } catch (err) {
+      console.error('Failed to move task:', err);
+      loadDay(currentDate);
+    }
+  }
+
+  // ── DnD handlers ──
+  function handleDragStart(event: DragStartEvent) {
+    const task = tasks.find((t) => t.id === event.active.id);
+    if (task) setDraggingTask(task);
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    setIsOverCW(event.over?.id === 'currently-working');
+    setIsOverBacklog(event.over?.id === 'backlog-drop-tab' || event.over?.id === 'backlog-drop-sidebar');
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setDraggingTask(null);
+    setIsOverCW(false);
+    setIsOverBacklog(false);
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeTask = tasks.find((t) => t.id === active.id);
+    if (!activeTask) return;
+
+    // Drop on currently-working box
+    if (over.id === 'currently-working') {
+      if (!activeTask.completed) setCurrentTaskId(activeTask.id);
+      return;
+    }
+
+    // Drop on backlog
+    if (over.id === 'backlog-drop-tab' || over.id === 'backlog-drop-sidebar') {
+      moveTaskToBacklog(activeTask);
+      return;
+    }
+
+    // Drop on another task
+    const overTask = tasks.find((t) => t.id === over.id);
+    if (!overTask) return;
+
+    if (activeTask.categoryId === overTask.categoryId) {
+      // Same category — reorder
+      if (active.id !== over.id) {
+        const catTasks = tasks
+          .filter((t) => t.categoryId === activeTask.categoryId)
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+        const oldIdx = catTasks.findIndex((t) => t.id === active.id);
+        const newIdx = catTasks.findIndex((t) => t.id === over.id);
+        if (oldIdx !== -1 && newIdx !== -1) {
+          reorderTasks(activeTask.categoryId, oldIdx, newIdx);
+        }
+      }
+    } else {
+      // Cross-category move
+      moveTaskToCategory(activeTask, overTask.categoryId, over.id as number);
+    }
+  }
+
+  function handleDragCancel() {
+    setDraggingTask(null);
+    setIsOverCW(false);
+    setIsOverBacklog(false);
+  }
+
   // ── Meal ──
   async function updateMeal(id: number, updates: { description: string; eaten: boolean }) {
     const updated = await mealApi.update(id, updates);
-    setMeals((prev) => prev.map((m) => (m.id === id ? updated as MealSlot : m)));
+    setMeals((prev) => prev.map((m) => (m.id === id ? (updated as MealSlot) : m)));
   }
 
   // ── Notes ──
@@ -184,6 +315,11 @@ function App() {
     setTasks((prev) => [...prev, newTask]);
   }
 
+  // Drag ghost info
+  const draggingCategory = draggingTask
+    ? categories.find((c) => c.id === draggingTask.categoryId)
+    : null;
+
   if (loading || !day) {
     return <div className="app loading">Ładowanie...</div>;
   }
@@ -201,38 +337,62 @@ function App() {
         onCloseDay={closeDay}
         onNavigate={navigateToDate}
       />
-      <main className="main">
-        <TodoSection
-          tasks={tasks}
-          categories={categories}
-          closed={day.closed}
-          onToggleTask={toggleTask}
-          onDeleteTask={deleteTask}
-          onAddTask={addTask}
-          onReorderTasks={reorderTasks}
-          onMoveToBacklog={moveTaskToBacklog}
-          onAddCategory={addCategory}
-          onEditCategory={editCategory}
-          onDeleteCategory={deleteCategory}
-        />
-        <div className="grid-bottom">
-          <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
-          <div className="grid-bottom-right">
-            <NotesSection notes={notes} closed={day.closed} onAddNote={addNote} onDeleteNote={deleteNote} />
-            <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} />
+      <DndContext
+        sensors={sensors}
+        collisionDetection={customCollisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <main className="main">
+          <TodoSection
+            tasks={tasks}
+            categories={categories}
+            closed={day.closed}
+            onToggleTask={toggleTask}
+            onDeleteTask={deleteTask}
+            onAddTask={addTask}
+            onReorderTasks={reorderTasks}
+            onMoveToBacklog={moveTaskToBacklog}
+            onAddCategory={addCategory}
+            onEditCategory={editCategory}
+            onDeleteCategory={deleteCategory}
+            currentTaskId={currentTaskId}
+            onSetCurrentTask={setCurrentTaskId}
+            isOverCW={isOverCW}
+          />
+          <div className="grid-bottom">
+            <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
+            <div className="grid-bottom-right">
+              <NotesSection notes={notes} closed={day.closed} onAddNote={addNote} onDeleteNote={deleteNote} />
+              <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} />
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      <Backlog
-        open={backlogOpen}
-        onToggle={() => setBacklogOpen(!backlogOpen)}
-        backlog={backlog}
-        onAddTask={addBacklogTask}
-        onDeleteTask={deleteBacklogTask}
-        onMoveToDay={moveBacklogToDay}
-        categories={categories}
-      />
+        <Backlog
+          open={backlogOpen}
+          onToggle={() => setBacklogOpen(!backlogOpen)}
+          backlog={backlog}
+          onAddTask={addBacklogTask}
+          onDeleteTask={deleteBacklogTask}
+          onMoveToDay={moveBacklogToDay}
+          categories={categories}
+          isDragging={!!draggingTask}
+          isOverBacklog={isOverBacklog}
+        />
+
+        <DragOverlay dropAnimation={{ duration: 250, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
+          {draggingTask && (
+            <div className="tc tc-ghost" style={{ borderColor: draggingCategory?.color || '#ddd' }}>
+              <div className="tc-top">
+                <span className="tc-title">{draggingTask.title}</span>
+              </div>
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }
