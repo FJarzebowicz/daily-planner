@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -44,7 +45,7 @@ function formatTime(minutes: number) {
     const m = minutes % 60;
     return m ? `${h}h ${m}m` : `${h}h`;
   }
-  return `${minutes}m`;
+  return `${minutes} min`;
 }
 
 function formatElapsed(seconds: number) {
@@ -53,7 +54,10 @@ function formatElapsed(seconds: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-/* ── Shared modal shell ── */
+const priorityLabel: Record<string, string> = { LOW: 'Niski', MEDIUM: 'Średni', HIGH: 'Wysoki' };
+const priorityClass: Record<string, string> = { LOW: 'low', MEDIUM: 'medium', HIGH: 'high' };
+
+/* ── Shared modal shell (portal) ── */
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -62,7 +66,7 @@ const overlayVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.95, y: 16 },
-  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' as const } },
   exit: { opacity: 0, scale: 0.95, y: 16, transition: { duration: 0.18 } },
 };
 
@@ -80,7 +84,7 @@ function ModalShell({ children, onClose }: { children: React.ReactNode; onClose:
     };
   }, [handleEsc]);
 
-  return (
+  return createPortal(
     <motion.div
       className="modal-overlay"
       variants={overlayVariants}
@@ -102,7 +106,8 @@ function ModalShell({ children, onClose }: { children: React.ReactNode; onClose:
         </button>
         {children}
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
 
@@ -414,7 +419,7 @@ function CurrentlyWorkingBox({
   );
 }
 
-/* ── Sortable task row ── */
+/* ── Sortable task card ── */
 
 function SortableTask({
   task,
@@ -440,119 +445,115 @@ function SortableTask({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.35 : 1,
   };
-
-  const priorityDots: Record<string, number> = { LOW: 1, MEDIUM: 2, HIGH: 3 };
-  const priorityColors: Record<string, string> = { LOW: '#94a3b8', MEDIUM: '#f59e0b', HIGH: '#ef4444' };
 
   return (
     <motion.div
       ref={setNodeRef}
       style={style}
-      className={`task-item ${task.completed ? 'task-done' : ''} ${!task.completed && closed ? 'task-undone' : ''}`}
+      className={`tc ${task.completed ? 'tc--done' : ''} ${!task.completed && closed ? 'tc--undone' : ''}`}
       layout
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20, height: 0 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, height: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {!closed && (
-        <button className="drag-handle" {...attributes} {...listeners}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" opacity="0.3">
-            <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
-            <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
-            <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
-          </svg>
-        </button>
-      )}
-
-      <motion.span
-        className="task-order"
-        style={{ backgroundColor: catColor, color: darken(catColor) }}
-        key={orderNum}
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-      >
-        {orderNum}
-      </motion.span>
-
-      <motion.button
-        className={`checkbox ${task.completed ? 'checkbox--checked' : ''}`}
-        onClick={onToggle}
-        disabled={closed}
-        whileTap={{ scale: 0.85 }}
-      >
-        {task.completed && (
-          <motion.svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </motion.svg>
-        )}
-      </motion.button>
-
-      <div className="task-content">
-        <span className={`task-name ${task.completed ? 'task-name--done' : ''}`}>{task.title}</span>
-        {task.description && <span className="task-desc">{task.description}</span>}
+      {/* Top row: order + name + checkbox */}
+      <div className="tc-top">
+        <motion.span
+          className="tc-order"
+          style={{ backgroundColor: catColor, color: darken(catColor) }}
+          key={orderNum}
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+        >
+          {orderNum}
+        </motion.span>
+        <span className={`tc-title ${task.completed ? 'tc-title--done' : ''}`}>{task.title}</span>
+        <motion.button
+          className={`tc-check ${task.completed ? 'tc-check--checked' : ''}`}
+          onClick={onToggle}
+          disabled={closed}
+          whileTap={{ scale: 0.85 }}
+        >
+          {task.completed && (
+            <motion.svg
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white"
+              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.3 }}
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </motion.svg>
+          )}
+        </motion.button>
       </div>
 
-      <div className="task-meta">
-        {task.estimatedMinutes > 0 && (
-          <span className="task-time-tag">{formatTime(task.estimatedMinutes)}</span>
-        )}
-        <span className="priority-dots">
-          {Array.from({ length: priorityDots[task.priority] || 2 }).map((_, i) => (
-            <span key={i} className="priority-dot" style={{ background: priorityColors[task.priority] || '#f59e0b' }} />
-          ))}
-        </span>
+      {/* Description */}
+      {task.description && (
+        <p className="tc-desc">{task.description}</p>
+      )}
+
+      {/* Bottom row: drag + pills + hover actions */}
+      <div className="tc-bottom">
         {!closed && (
-          <>
+          <button className="tc-drag" {...attributes} {...listeners}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" opacity="0.35">
+              <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
+              <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+              <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
+            </svg>
+          </button>
+        )}
+
+        <div className="tc-pills">
+          {task.estimatedMinutes > 0 && (
+            <span className="tc-pill tc-pill--time">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              {formatTime(task.estimatedMinutes)}
+            </span>
+          )}
+          <span className={`tc-pill tc-pill--priority tc-pill--${priorityClass[task.priority] || 'medium'}`}>
+            {priorityLabel[task.priority] || 'Średni'}
+          </span>
+        </div>
+
+        {!closed && (
+          <div className="tc-hover-actions">
             <motion.button
-              className="btn-icon btn-backlog"
+              className="tc-action"
               onClick={onMoveToBacklog}
-              whileHover={{ scale: 1.2 }}
+              whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
-              title="Przenieś do backlogu"
+              title="Do backlogu"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
             </motion.button>
             <motion.button
-              className="btn-icon btn-delete"
+              className="tc-action tc-action--delete"
               onClick={onDelete}
-              whileHover={{ scale: 1.2 }}
+              whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
+              title="Usuń"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
             </motion.button>
-          </>
+          </div>
         )}
       </div>
     </motion.div>
   );
 }
 
-/* ── Drag overlay (ghost while dragging) ── */
+/* ── Drag overlay ghost ── */
 
 function TaskDragOverlay({ task, catColor }: { task: Task; catColor: string }) {
   return (
-    <div className="task-item task-drag-ghost" style={{ borderColor: catColor }}>
-      <span className="task-order" style={{ backgroundColor: catColor, color: darken(catColor) }}>
-        ⋮
-      </span>
-      <div className="task-content">
-        <span className="task-name">{task.title}</span>
+    <div className="tc tc-ghost" style={{ borderColor: catColor }}>
+      <div className="tc-top">
+        <span className="tc-order" style={{ backgroundColor: catColor, color: darken(catColor) }}>⋮</span>
+        <span className="tc-title">{task.title}</span>
       </div>
     </div>
   );
@@ -686,7 +687,6 @@ export function TodoSection({
   const currentTask = currentTaskId ? tasks.find((t) => t.id === currentTaskId) ?? null : null;
   const currentCategory = currentTask ? categories.find((c) => c.id === currentTask.categoryId) ?? null : null;
 
-  // Clear currentTask if it got completed externally or deleted
   useEffect(() => {
     if (currentTaskId && !tasks.find((t) => t.id === currentTaskId)) {
       setCurrentTaskId(null);
@@ -711,7 +711,6 @@ export function TodoSection({
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
 
-    // Dropped onto "currently working" box
     if (over.id === 'currently-working') {
       if (!activeTask.completed) {
         setCurrentTaskId(activeTask.id);
@@ -719,7 +718,6 @@ export function TodoSection({
       return;
     }
 
-    // Reorder within same category
     if (active.id !== over.id) {
       const overTask = tasks.find((t) => t.id === over.id);
       if (overTask && activeTask.categoryId === overTask.categoryId) {

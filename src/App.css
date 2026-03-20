@@ -538,7 +538,12 @@
 .btn-save:hover { opacity: 0.85; }
 .btn-cancel { background: rgba(0,0,0,0.06); color: var(--text); }
 
-.category-body { padding: 8px 14px 14px; }
+.category-body {
+  padding: 10px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 .empty-cat {
   text-align: center;
@@ -687,71 +692,78 @@
   font-style: italic;
 }
 
-/* ── Task order badge ── */
-.task-order {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 10px;
-  font-weight: 700;
-  flex-shrink: 0;
-  letter-spacing: -0.02em;
+/* ── Task card (.tc) ── */
+.tc {
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px 12px;
+  transition: box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.tc:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  border-color: var(--border-strong);
 }
 
-/* ── Drag overlay ghost ── */
-.task-drag-ghost {
-  background: var(--surface-solid);
-  box-shadow: var(--shadow-lg);
+.tc--done {
+  background: var(--green-bg) !important;
+  border-color: var(--green-border) !important;
+}
+.tc--undone {
+  background: var(--red-bg) !important;
+  border-color: var(--red-border) !important;
+}
+
+/* Ghost while dragging */
+.tc-ghost {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
   border-width: 2px;
   border-style: solid;
   opacity: 0.92;
   pointer-events: none;
 }
 
-/* Task item */
-.task-item {
+/* Top row: order + title + checkbox */
+.tc-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  transition: all 0.3s var(--ease);
-  border: 1px solid transparent;
-  margin-bottom: 3px;
-}
-.task-item:hover { background: rgba(0,0,0,0.02); }
-
-.task-done {
-  background: var(--green-bg) !important;
-  border-color: var(--green-border) !important;
-}
-.task-undone {
-  background: var(--red-bg) !important;
-  border-color: var(--red-border) !important;
+  gap: 10px;
 }
 
-.drag-handle {
-  cursor: grab;
-  background: none;
-  border: none;
-  padding: 2px;
+.tc-order {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  color: var(--text-muted);
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
   flex-shrink: 0;
-  opacity: 0.4;
-  transition: opacity 0.2s;
+  letter-spacing: -0.02em;
 }
-.task-item:hover .drag-handle { opacity: 0.7; }
-.drag-handle:active { cursor: grabbing; }
 
-/* Custom checkbox */
-.checkbox {
-  width: 22px; height: 22px;
+.tc-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+.tc-title--done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.tc-check {
+  width: 22px;
+  height: 22px;
   border-radius: 7px;
   border: 2px solid var(--border-strong);
   background: var(--surface-solid);
@@ -762,68 +774,123 @@
   flex-shrink: 0;
   transition: all 0.25s var(--ease-bounce);
 }
-.checkbox:hover:not(:disabled) {
+.tc-check:hover:not(:disabled) {
   border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
-.checkbox--checked {
+.tc-check--checked {
   background: var(--green);
   border-color: var(--green);
-  box-shadow: 0 2px 8px rgba(22,163,74,0.3);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
 }
-.checkbox:disabled { cursor: default; opacity: 0.5; }
+.tc-check:disabled { cursor: default; opacity: 0.5; }
 
-.task-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.task-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.task-name--done {
-  text-decoration: line-through;
-  color: var(--text-muted);
-}
-
-.task-desc {
-  font-size: 11px;
+/* Description */
+.tc-desc {
+  margin: 6px 0 0 34px;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--text-secondary);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.task-meta {
+/* Bottom row: drag + pills + hover actions */
+.tc-bottom {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 10px;
+}
+
+.tc-drag {
+  cursor: grab;
+  background: none;
+  border: none;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
   flex-shrink: 0;
-  opacity: 0.6;
+  opacity: 0.35;
   transition: opacity 0.2s;
 }
-.task-item:hover .task-meta { opacity: 1; }
+.tc:hover .tc-drag { opacity: 0.7; }
+.tc-drag:active { cursor: grabbing; }
 
-.task-time-tag {
+.tc-pills {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-family: var(--font-display);
   font-size: 10px;
   font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--bg-warm);
   padding: 3px 10px;
   border-radius: var(--radius-pill);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.tc-pill--time {
+  background: var(--bg-warm);
+  color: var(--text-secondary);
+}
+.tc-pill--priority {
+  border: 1px solid transparent;
+}
+.tc-pill--low {
+  background: #f0f4f8;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+.tc-pill--medium {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+.tc-pill--high {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
 }
 
-.priority-dots { display: flex; gap: 3px; }
-.priority-dot { width: 6px; height: 6px; border-radius: 50%; }
+.tc-hover-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.tc:hover .tc-hover-actions { opacity: 1; }
+
+.tc-action {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg-warm);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tc-action:hover {
+  background: var(--border-strong);
+  color: var(--text);
+}
+.tc-action--delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
 
 .add-task-btn {
   display: flex;
