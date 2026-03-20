@@ -10,5 +10,5 @@ public interface ShoppingItemRepository extends JpaRepository<ShoppingItem, Long
     Optional<ShoppingItem> findByIdAndUserId(Long id, Long userId);
     boolean existsByIdAndUserId(Long id, Long userId);
     void deleteByIdAndUserId(Long id, Long userId);
-    void deleteByUserIdAndIsBoughtTrue(Long userId);
+    void deleteByUserIdAndBoughtTrue(Long userId);
 }

@@ -72,6 +72,6 @@ public class ShoppingItemService {
     @Transactional
     public void deleteBought() {
         Long userId = SecurityUtil.getCurrentUserId();
-        repository.deleteByUserIdAndIsBoughtTrue(userId);
+        repository.deleteByUserIdAndBoughtTrue(userId);
     }
 }
