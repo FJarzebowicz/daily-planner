@@ -3033,78 +3033,132 @@
   color: var(--accent);
 }
 
-/* ── Habits in Planner ── */
-.habits-planner-section {
-  border-bottom: 1px solid #000;
+/* ── Habit items in Todo categories ── */
+.tc-habit {
+  border-left: 2px dashed var(--border);
 }
 
-.habits-planner-counter {
+.tc-habit-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.tc-pill--habit {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 9px;
   letter-spacing: 2px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
   color: var(--text-muted);
 }
 
-.habits-planner-list {
-  display: flex;
-  flex-direction: column;
+/* ── Date Picker ── */
+.datepicker {
+  position: relative;
 }
 
-.habits-planner-item {
+.datepicker-trigger {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  min-width: 180px;
+  transition: border-color var(--transition-fast);
+}
+.datepicker-trigger:hover { border-color: var(--text); }
+
+.datepicker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-dropdown);
+  padding: 12px;
+  min-width: 280px;
+  margin-top: 4px;
+}
+
+.datepicker-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  transition: all var(--transition-fast);
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
-.habits-planner-item:last-child { border-bottom: none; }
-.habits-planner-item:hover { background: #FAFAFA; padding-left: 4px; }
 
-.habits-planner-check {
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--border-strong);
+.datepicker-nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
   transition: all var(--transition-fast);
 }
-.habits-planner-item--done .habits-planner-check {
-  background: #2d8a4e;
-  border-color: #2d8a4e;
-  color: #fff;
-}
-.habits-planner-item--missed .habits-planner-check {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
+.datepicker-nav-btn:hover { border-color: var(--text); }
 
-.habits-planner-dot {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-}
-
-.habits-planner-name {
-  font-size: 14px;
+.datepicker-month {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
   color: var(--text);
-  flex: 1;
-}
-.habits-planner-item--done .habits-planner-name {
-  color: #2d8a4e;
-}
-.habits-planner-item--missed .habits-planner-name {
-  color: var(--accent);
 }
 
-.habits-planner-repeat {
-  font-size: 14px;
+.datepicker-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 4px;
+}
+
+.datepicker-weekday {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
   color: var(--text-muted);
-  flex-shrink: 0;
+  text-align: center;
+  padding: 4px 0;
+}
+
+.datepicker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.datepicker-cell {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--text);
+  border: none;
+  background: transparent;
+  transition: all var(--transition-fast);
+}
+.datepicker-cell:not(.datepicker-cell--empty):hover {
+  background: #F0F0F0;
+}
+.datepicker-cell--today {
+  font-weight: 700;
+  border: 1px solid var(--accent) !important;
+}
+.datepicker-cell--selected {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+}
+.datepicker-cell--empty {
+  cursor: default;
 }
 
 /* Habits responsive */

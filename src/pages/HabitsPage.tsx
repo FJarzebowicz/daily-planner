@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { habitApi, categoryApi } from '../api';
 import type {
   Habit,
@@ -12,9 +12,121 @@ import { NavTabs } from '../components/NavTabs';
 import { UserMenu } from '../components/UserMenu';
 
 const ALL_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
+const MONTH_NAMES = [
+  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
+];
+const WEEKDAY_HEADERS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
 
 function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+// ── Calendar Date Picker ──
+function DatePicker({
+  value,
+  onChange,
+}: {
+  value: string; // yyyy-MM-dd
+  onChange: (date: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = value ? new Date(value + 'T00:00:00') : new Date();
+  const [viewYear, setViewYear] = useState(selected.getFullYear());
+  const [viewMonth, setViewMonth] = useState(selected.getMonth());
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  }
+
+  // Build calendar grid
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  // Monday = 0, Sunday = 6
+  let startDow = firstDay.getDay() - 1;
+  if (startDow < 0) startDow = 6;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const todayStr = formatDate(new Date());
+
+  function selectDay(day: number) {
+    const m = String(viewMonth + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    onChange(`${viewYear}-${m}-${d}`);
+    setOpen(false);
+  }
+
+  const displayDate = value
+    ? `${parseInt(value.slice(8, 10))} ${MONTH_NAMES[parseInt(value.slice(5, 7)) - 1]} ${value.slice(0, 4)}`
+    : 'Wybierz datę';
+
+  return (
+    <div className="datepicker" ref={ref}>
+      <button
+        type="button"
+        className="datepicker-trigger"
+        onClick={() => {
+          if (!open) {
+            setViewYear(selected.getFullYear());
+            setViewMonth(selected.getMonth());
+          }
+          setOpen(!open);
+        }}
+      >
+        {displayDate}
+      </button>
+      {open && (
+        <div className="datepicker-dropdown">
+          <div className="datepicker-nav">
+            <button type="button" className="datepicker-nav-btn" onClick={prevMonth}>‹</button>
+            <span className="datepicker-month">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+            <button type="button" className="datepicker-nav-btn" onClick={nextMonth}>›</button>
+          </div>
+          <div className="datepicker-weekdays">
+            {WEEKDAY_HEADERS.map((w) => (
+              <span key={w} className="datepicker-weekday">{w}</span>
+            ))}
+          </div>
+          <div className="datepicker-grid">
+            {cells.map((day, i) => {
+              if (day === null) return <span key={`e${i}`} className="datepicker-cell datepicker-cell--empty" />;
+              const m = String(viewMonth + 1).padStart(2, '0');
+              const d = String(day).padStart(2, '0');
+              const cellDate = `${viewYear}-${m}-${d}`;
+              const isSelected = cellDate === value;
+              const isToday = cellDate === todayStr;
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  className={`datepicker-cell ${isSelected ? 'datepicker-cell--selected' : ''} ${isToday ? 'datepicker-cell--today' : ''}`}
+                  onClick={() => selectDay(day)}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function getMonthsBack(months: number): { from: string; to: string } {
@@ -220,12 +332,7 @@ function HabitForm({
 
       <div className="habit-form-row">
         <label className="habit-form-label">DATA STARTU</label>
-        <input
-          type="date"
-          className="habit-form-input habit-form-input--short"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
+        <DatePicker value={startDate} onChange={setStartDate} />
       </div>
 
       <div className="habit-form-row">

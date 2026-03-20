@@ -442,6 +442,8 @@ function App() {
                   currentTaskId={currentTaskId}
                   onSetCurrentTask={setCurrentTaskId}
                   isOverCW={isOverCW}
+                  habits={habits}
+                  onToggleHabit={toggleHabit}
                 />
                 <div className="grid-bottom">
                   <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
@@ -451,34 +453,6 @@ function App() {
                   </div>
                 </div>
 
-                {habits.length > 0 && (
-                  <div className="section habits-planner-section">
-                    <div className="section-header">
-                      <h2 className="section-title">NAWYKI</h2>
-                      <span className="habits-planner-counter">
-                        {habits.filter((h) => h.completed).length}/{habits.length}
-                      </span>
-                    </div>
-                    <div className="habits-planner-list">
-                      {habits.map((h) => (
-                        <div
-                          key={h.id}
-                          className={`habits-planner-item ${h.completed ? 'habits-planner-item--done' : ''} ${day.closed && !h.completed ? 'habits-planner-item--missed' : ''}`}
-                          onClick={() => !day.closed && toggleHabit(h.id, h.completed)}
-                        >
-                          <div className="habits-planner-check">
-                            {h.completed ? '✓' : ''}
-                          </div>
-                          {h.categoryColor && (
-                            <div className="habits-planner-dot" style={{ background: h.categoryColor }} />
-                          )}
-                          <span className="habits-planner-name">{h.name}</span>
-                          <span className="habits-planner-repeat">↻</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </motion.main>

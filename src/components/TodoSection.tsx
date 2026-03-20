@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Task, Category } from '../types';
+import type { Task, Category, HabitForDate } from '../types';
 import { PASTEL_COLORS, TIME_PRESETS } from '../types';
 
 interface TodoSectionProps {
@@ -22,6 +22,8 @@ interface TodoSectionProps {
   currentTaskId: number | null;
   onSetCurrentTask: (id: number | null) => void;
   isOverCW: boolean;
+  habits?: HabitForDate[];
+  onToggleHabit?: (id: number, completed: boolean) => void;
 }
 
 /* ── helpers ── */
@@ -576,6 +578,58 @@ function SortableTask({
   );
 }
 
+/* ── Habit item (inside category card) ── */
+
+function HabitItem({
+  habit,
+  closed,
+  onToggle,
+}: {
+  habit: HabitForDate;
+  closed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <motion.div
+      className={`tc tc-habit ${habit.completed ? 'tc--done' : ''} ${!habit.completed && closed ? 'tc--undone' : ''}`}
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, height: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="tc-top">
+        <span className="tc-habit-icon">🔁</span>
+        <span className={`tc-title ${habit.completed ? 'tc-title--done' : ''}`}>{habit.name}</span>
+        <motion.button
+          className={`tc-check ${habit.completed ? 'tc-check--checked' : ''}`}
+          onClick={onToggle}
+          disabled={closed}
+          whileTap={{ scale: 0.85 }}
+        >
+          {habit.completed && (
+            <motion.svg
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white"
+              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.3 }}
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </motion.svg>
+          )}
+        </motion.button>
+      </div>
+      {habit.description && (
+        <p className="tc-desc">{habit.description}</p>
+      )}
+      <div className="tc-bottom">
+        <div className="tc-pills">
+          <span className="tc-pill tc-pill--habit">NAWYK</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ── Category card ── */
 
 function CategoryCard({
@@ -589,6 +643,8 @@ function CategoryCard({
   onEditCategory,
   onDeleteCategory,
   onAddTask,
+  habits,
+  onToggleHabit,
 }: {
   category: Category;
   tasks: Task[];
@@ -600,6 +656,8 @@ function CategoryCard({
   onEditCategory: (id: number, updates: Partial<Category>) => void;
   onDeleteCategory: (id: number) => void;
   onAddTask: (categoryId: number) => void;
+  habits?: HabitForDate[];
+  onToggleHabit?: (id: number, completed: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -652,7 +710,21 @@ function CategoryCard({
             </AnimatePresence>
           </SortableContext>
 
-          {tasks.length === 0 && (
+          {/* Habits for this category */}
+          {habits && habits.length > 0 && (
+            <AnimatePresence mode="popLayout">
+              {habits.map((h) => (
+                <HabitItem
+                  key={`habit-${h.id}`}
+                  habit={h}
+                  closed={closed}
+                  onToggle={() => onToggleHabit?.(h.id, h.completed)}
+                />
+              ))}
+            </AnimatePresence>
+          )}
+
+          {tasks.length === 0 && (!habits || habits.length === 0) && (
             <p className="empty-cat">Brak tasków</p>
           )}
 
@@ -700,12 +772,24 @@ export function TodoSection({
   currentTaskId,
   onSetCurrentTask,
   isOverCW,
+  habits = [],
+  onToggleHabit,
 }: TodoSectionProps) {
   const [addingTaskCat, setAddingTaskCat] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   const currentTask = currentTaskId ? tasks.find((t) => t.id === currentTaskId) ?? null : null;
   const currentCategory = currentTask ? categories.find((c) => c.id === currentTask.categoryId) ?? null : null;
+
+  // Group habits by categoryId so they appear inside matching category cards
+  const habitsByCategoryId = new Map<number | null, HabitForDate[]>();
+  for (const h of habits) {
+    const key = h.categoryId;
+    const list = habitsByCategoryId.get(key) || [];
+    list.push(h);
+    habitsByCategoryId.set(key, list);
+  }
+  const uncategorizedHabits = habitsByCategoryId.get(null) || [];
 
   function handleCWDone() {
     if (currentTaskId) {
@@ -761,9 +845,42 @@ export function TodoSection({
               onEditCategory={onEditCategory}
               onDeleteCategory={onDeleteCategory}
               onAddTask={(catId) => setAddingTaskCat(catId)}
+              habits={habitsByCategoryId.get(cat.id)}
+              onToggleHabit={onToggleHabit}
             />
           ))}
         </AnimatePresence>
+
+        {/* Uncategorized habits */}
+        {uncategorizedHabits.length > 0 && (
+          <motion.div
+            className="category-card"
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="category-header">
+              <h3 className="category-title">
+                Nawyki
+                <span className="category-count">{uncategorizedHabits.length}</span>
+              </h3>
+            </div>
+            <div className="category-body">
+              <AnimatePresence mode="popLayout">
+                {uncategorizedHabits.map((h) => (
+                  <HabitItem
+                    key={`habit-${h.id}`}
+                    habit={h}
+                    closed={closed}
+                    onToggle={() => onToggleHabit?.(h.id, h.completed)}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <AnimatePresence>
