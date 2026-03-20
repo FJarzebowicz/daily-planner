@@ -342,6 +342,66 @@ export const foodVariantApi = {
   delete: (foodId: number, id: number) => request<void>(`/foods/${foodId}/variants/${id}`, { method: 'DELETE' }),
 };
 
+// ── Habits ──
+export interface HabitResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+  scheduleType: string;
+  scheduleDays: string | null;
+  scheduleInterval: number | null;
+  startDate: string;
+  active: boolean;
+  streakGoal: number | null;
+  createdAt: string;
+}
+
+export interface HabitForDateResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+  completed: boolean;
+  scheduleType: string;
+}
+
+export interface HabitStatsResponse {
+  currentStreak: number;
+  longestStreak: number;
+  totalCompletions: number;
+  completionRateThisMonth: number;
+  completionsPerMonth: Record<string, number>;
+}
+
+export interface HabitCompletionResponse {
+  id: number;
+  completedDate: string;
+  completedAt: string;
+}
+
+export const habitApi = {
+  getAll: () => request<HabitResponse[]>('/habits'),
+  create: (data: { name: string; description?: string; categoryId?: number | null; scheduleType: string; scheduleDays?: string; scheduleInterval?: number; startDate: string; streakGoal?: number | null }) =>
+    request<HabitResponse>('/habits', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { name: string; description?: string; categoryId?: number | null; scheduleType: string; scheduleDays?: string; scheduleInterval?: number; startDate: string; active?: boolean; streakGoal?: number | null }) =>
+    request<HabitResponse>(`/habits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => request<void>(`/habits/${id}`, { method: 'DELETE' }),
+  togglePause: (id: number) => request<HabitResponse>(`/habits/${id}/pause`, { method: 'PUT' }),
+  complete: (id: number, date: string) =>
+    request<HabitCompletionResponse>(`/habits/${id}/complete/${date}`, { method: 'POST' }),
+  uncomplete: (id: number, date: string) =>
+    request<void>(`/habits/${id}/complete/${date}`, { method: 'DELETE' }),
+  getStats: (id: number) => request<HabitStatsResponse>(`/habits/${id}/stats`),
+  getCompletions: (id: number, from: string, to: string) =>
+    request<HabitCompletionResponse[]>(`/habits/${id}/completions?from=${from}&to=${to}`),
+  getForDate: (date: string) => request<HabitForDateResponse[]>(`/habits/for-date/${date}`),
+};
+
 // ── Backlog ──
 export interface BacklogTaskResponse {
   id: number;

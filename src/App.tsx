@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent } from './types';
+import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent, HabitForDate } from './types';
 import { formatDate } from './utils';
-import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi } from './api';
+import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi, habitApi } from './api';
 import {
   DndContext,
   closestCenter,
@@ -42,6 +42,7 @@ function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [recurringEvents, setRecurringEvents] = useState<RecurringEvent[]>([]);
   const [backlog, setBacklog] = useState<BacklogTask[]>([]);
+  const [habits, setHabits] = useState<HabitForDate[]>([]);
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [allDone, setAllDone] = useState(false);
@@ -60,7 +61,7 @@ function App() {
 
   const loadDay = useCallback(async (date: string) => {
     try {
-      const [dayData, cats, dayTasks, dayMeals, dayNotes, events, backlogTasks] = await Promise.all([
+      const [dayData, cats, dayTasks, dayMeals, dayNotes, events, backlogTasks, dayHabits] = await Promise.all([
         dayApi.get(date),
         categoryApi.getAll(),
         taskApi.getByDay(date),
@@ -68,6 +69,7 @@ function App() {
         thoughtApi.getByDay(date),
         recurringEventApi.getByDay(date),
         backlogApi.getAll(),
+        habitApi.getForDate(date),
       ]);
       setDay(dayData as DayData);
       setCategories(cats);
@@ -76,6 +78,7 @@ function App() {
       setNotes(dayNotes as Note[]);
       setRecurringEvents(events);
       setBacklog(backlogTasks);
+      setHabits(dayHabits as HabitForDate[]);
     } catch (err) {
       console.error('Failed to load day:', err);
     } finally {
@@ -317,6 +320,22 @@ function App() {
     setRecurringEvents(events);
   }
 
+  // ── Habits ──
+  async function toggleHabit(id: number, completed: boolean) {
+    // Optimistic update
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: !completed } : h)));
+    try {
+      if (completed) {
+        await habitApi.uncomplete(id, currentDate);
+      } else {
+        await habitApi.complete(id, currentDate);
+      }
+    } catch {
+      // Revert
+      setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed } : h)));
+    }
+  }
+
   // ── Backlog ──
   async function addBacklogTask(data: { name: string; description: string; estimatedMinutes: number; priority: string }) {
     const bt = await backlogApi.create(data);
@@ -431,6 +450,35 @@ function App() {
                     <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} onCopyFromPreviousDay={copyEventsFromPreviousDay} />
                   </div>
                 </div>
+
+                {habits.length > 0 && (
+                  <div className="section habits-planner-section">
+                    <div className="section-header">
+                      <h2 className="section-title">NAWYKI</h2>
+                      <span className="habits-planner-counter">
+                        {habits.filter((h) => h.completed).length}/{habits.length}
+                      </span>
+                    </div>
+                    <div className="habits-planner-list">
+                      {habits.map((h) => (
+                        <div
+                          key={h.id}
+                          className={`habits-planner-item ${h.completed ? 'habits-planner-item--done' : ''} ${day.closed && !h.completed ? 'habits-planner-item--missed' : ''}`}
+                          onClick={() => !day.closed && toggleHabit(h.id, h.completed)}
+                        >
+                          <div className="habits-planner-check">
+                            {h.completed ? '✓' : ''}
+                          </div>
+                          {h.categoryColor && (
+                            <div className="habits-planner-dot" style={{ background: h.categoryColor }} />
+                          )}
+                          <span className="habits-planner-name">{h.name}</span>
+                          <span className="habits-planner-repeat">↻</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </motion.main>

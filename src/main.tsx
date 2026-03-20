@@ -10,6 +10,7 @@ import { GoogleCallback } from './pages/GoogleCallback'
 import { ProfilePage } from './pages/ProfilePage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { FoodDatabasePage } from './pages/FoodDatabasePage'
+import { HabitsPage } from './pages/HabitsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/shopping" element={<ProtectedRoute><ShoppingPage /></ProtectedRoute>} />
           <Route path="/food" element={<ProtectedRoute><FoodDatabasePage /></ProtectedRoute>} />
+          <Route path="/habits" element={<ProtectedRoute><HabitsPage /></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><App /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>

@@ -122,6 +122,59 @@ export interface Food {
   variants: FoodVariant[] | null;
 }
 
+export type ScheduleType = 'DAILY' | 'SPECIFIC_DAYS' | 'EVERY_X_DAYS';
+
+export const SCHEDULE_LABELS: Record<ScheduleType, string> = {
+  DAILY: 'Codziennie',
+  SPECIFIC_DAYS: 'Wybrane dni',
+  EVERY_X_DAYS: 'Co X dni',
+};
+
+export const DAY_LABELS: Record<string, string> = {
+  MON: 'Pon', TUE: 'Wt', WED: 'Sr', THU: 'Czw', FRI: 'Pt', SAT: 'Sob', SUN: 'Ndz',
+};
+
+export interface Habit {
+  id: number;
+  name: string;
+  description: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+  scheduleType: ScheduleType;
+  scheduleDays: string | null;
+  scheduleInterval: number | null;
+  startDate: string;
+  active: boolean;
+  streakGoal: number | null;
+  createdAt: string;
+}
+
+export interface HabitForDate {
+  id: number;
+  name: string;
+  description: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+  completed: boolean;
+  scheduleType: string;
+}
+
+export interface HabitStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalCompletions: number;
+  completionRateThisMonth: number;
+  completionsPerMonth: Record<string, number>;
+}
+
+export interface HabitCompletion {
+  id: number;
+  completedDate: string;
+  completedAt: string;
+}
+
 export interface DayData {
   id: number;
   date: string;
