@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './AuthContext'
+import { CustomCursor } from './components/CustomCursor'
 import './index.css'
 import App from './App'
 import { AuthPage } from './pages/AuthPage'
@@ -25,6 +26,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
+      <CustomCursor />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<PublicRoute><AuthPage /></PublicRoute>} />

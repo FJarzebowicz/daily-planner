@@ -20,7 +20,6 @@ import { MealsSection } from './components/MealsSection';
 import { NotesSection } from './components/NotesSection';
 import { EventsSection } from './components/EventsSection';
 import { Backlog } from './components/Backlog';
-import { CustomCursor } from './components/CustomCursor';
 import './App.css';
 
 /* Custom collision detection: prioritize special drop zones, fall back to closestCenter for tasks */
@@ -346,8 +345,6 @@ function App() {
 
   return (
     <div className="app">
-      <CustomCursor />
-
       {/* All done confetti easter egg */}
       <AnimatePresence>
         {allDone && (
