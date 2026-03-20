@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { shoppingApi, shoppingCategoryApi } from '../api';
 import type { ShoppingItem, ShoppingCategory } from '../types';
-import { SHOPPING_CATEGORIES } from '../types';
 import { NavTabs } from '../components/NavTabs';
 import { UserMenu } from '../components/UserMenu';
 
@@ -46,10 +45,6 @@ export function ShoppingPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Build category name list: user categories + fallback defaults for items without a linked category
-  const categoryNames = categories.map((c) => c.name);
-  const allCategoryNames = [...new Set([...categoryNames, ...SHOPPING_CATEGORIES])];
 
   function getSelectedCategoryName(): string {
     if (selectedCategoryId) {
@@ -123,6 +118,10 @@ export function ShoppingPage() {
       await shoppingCategoryApi.delete(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
       if (selectedCategoryId === id) setSelectedCategoryId(null);
+      if (filterCategory) {
+        const deleted = categories.find((c) => c.id === id);
+        if (deleted && filterCategory === deleted.name) setFilterCategory(null);
+      }
     } catch {
       // silent
     }
@@ -220,7 +219,7 @@ export function ShoppingPage() {
             value={selectedCategoryId ?? ''}
             onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
           >
-            <option value="">Inne</option>
+            <option value="">Wybierz kategorie...</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
@@ -236,13 +235,13 @@ export function ShoppingPage() {
           >
             WSZYSTKO
           </button>
-          {allCategoryNames.map((cat) => (
+          {categories.map((cat) => (
             <button
-              key={cat}
-              className={`shopping-filter ${filterCategory === cat ? 'shopping-filter--active' : ''}`}
-              onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+              key={cat.id}
+              className={`shopping-filter ${filterCategory === cat.name ? 'shopping-filter--active' : ''}`}
+              onClick={() => setFilterCategory(filterCategory === cat.name ? null : cat.name)}
             >
-              {cat.toUpperCase()}
+              {cat.name.toUpperCase()}
             </button>
           ))}
         </div>
