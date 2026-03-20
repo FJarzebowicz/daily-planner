@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react';
 
+const INTERACTIVE =
+  'button, a, [role="button"], .tc, .meal-card, .category-card, .nav-arrow, .backlog-tab, label, .toggle, .tc-check, select';
+
+const TEXT_INPUT = 'input, textarea';
+
 export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
 
@@ -7,9 +12,12 @@ export function CustomCursor() {
     const dot = dotRef.current;
     if (!dot) return;
 
-    let mouseX = 0, mouseY = 0;
-    let dotX = 0, dotY = 0;
+    let mouseX = 0;
+    let mouseY = 0;
+    let dotX = 0;
+    let dotY = 0;
     let raf: number;
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
 
     function onMove(e: MouseEvent) {
       mouseX = e.clientX;
@@ -27,36 +35,37 @@ export function CustomCursor() {
     function onOver(e: MouseEvent) {
       const target = e.target as HTMLElement;
 
-      // Detect interactive elements
-      const interactive = target.closest(
-        'button, a, input, textarea, select, [role="button"], .tc, .meal-card, .category-card, .nav-arrow, .backlog-tab, label'
-      );
-      dot!.classList.toggle('cursor-dot--hover', !!interactive);
+      // Text input → caret mode
+      const isTextInput = target.closest(TEXT_INPUT);
+      // Interactive element → grow mode
+      const isInteractive = !isTextInput && target.closest(INTERACTIVE);
+      // Dark section → invert colors
+      const isDark = target.closest('.section--dark, .section--blue');
 
-      // Detect dark/blue sections for color inversion
-      const darkSection = target.closest('.section--dark, .section--blue');
-      dot!.classList.toggle('cursor-dot--invert', !!darkSection);
+      dot!.classList.toggle('cursor-dot--text', !!isTextInput);
+      dot!.classList.toggle('cursor-dot--interactive', !!isInteractive);
+      dot!.classList.toggle('cursor-dot--invert', !!isDark);
     }
 
-    function onClick(e: MouseEvent) {
-      const ripple = document.createElement('div');
-      ripple.className = 'cursor-ripple';
-      ripple.style.left = `${e.clientX}px`;
-      ripple.style.top = `${e.clientY}px`;
-      document.body.appendChild(ripple);
-      ripple.addEventListener('animationend', () => ripple.remove());
+    function onDown() {
+      dot!.classList.add('cursor-dot--click');
+      if (clickTimeout) clearTimeout(clickTimeout);
+      clickTimeout = setTimeout(() => {
+        dot!.classList.remove('cursor-dot--click');
+      }, 150);
     }
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseover', onOver);
-    document.addEventListener('mousedown', onClick);
+    document.addEventListener('mousedown', onDown);
     raf = requestAnimationFrame(animate);
 
     return () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseover', onOver);
-      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('mousedown', onDown);
       cancelAnimationFrame(raf);
+      if (clickTimeout) clearTimeout(clickTimeout);
     };
   }, []);
 
