@@ -1,7 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  DragOverlay,
+} from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task, Category } from '../types';
@@ -19,6 +27,30 @@ interface TodoSectionProps {
   onAddCategory: (data: { name: string; color: string }) => void;
   onEditCategory: (id: number, updates: Partial<Category>) => void;
   onDeleteCategory: (id: number) => void;
+}
+
+/* ── helpers ── */
+
+function darken(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgb(${Math.floor(r * 0.45)}, ${Math.floor(g * 0.45)}, ${Math.floor(b * 0.45)})`;
+}
+
+function formatTime(minutes: number) {
+  if (minutes >= 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${minutes}m`;
+}
+
+function formatElapsed(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 /* ── Shared modal shell ── */
@@ -269,26 +301,146 @@ function CategoryModal({
   );
 }
 
+/* ── Currently Working On box ── */
+
+function CurrentlyWorkingBox({
+  task,
+  category,
+  closed,
+  onDone,
+  onPutBack,
+  isOver,
+}: {
+  task: Task | null;
+  category: Category | null;
+  closed: boolean;
+  onDone: () => void;
+  onPutBack: () => void;
+  isOver: boolean;
+}) {
+  const { setNodeRef } = useDroppable({ id: 'currently-working' });
+  const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (task && !task.completed) {
+      startRef.current = Date.now();
+      setElapsed(0);
+      intervalRef.current = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startRef.current!) / 1000));
+      }, 1000);
+    } else {
+      setElapsed(0);
+      startRef.current = null;
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [task]);
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`cw-box ${task ? 'cw-box--active' : ''} ${isOver ? 'cw-box--over' : ''}`}
+    >
+      <AnimatePresence mode="wait">
+        {task && category ? (
+          <motion.div
+            key={task.id}
+            className="cw-content"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="cw-header">
+              <div className="cw-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                Teraz robię
+              </div>
+              <div className="cw-timer">{formatElapsed(elapsed)}</div>
+            </div>
+
+            <div className="cw-task">
+              <span className="cw-task-name">{task.title}</span>
+              <div className="cw-task-meta">
+                <span className="cw-cat-tag" style={{ backgroundColor: category.color, color: darken(category.color) }}>
+                  {category.name}
+                </span>
+                {task.estimatedMinutes > 0 && (
+                  <span className="cw-time-tag">{formatTime(task.estimatedMinutes)}</span>
+                )}
+              </div>
+            </div>
+
+            {!closed && (
+              <div className="cw-actions">
+                <motion.button
+                  className="cw-btn cw-btn--done"
+                  onClick={onDone}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  Zrobione
+                </motion.button>
+                <motion.button
+                  className="cw-btn cw-btn--back"
+                  onClick={onPutBack}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
+                  Odłóż
+                </motion.button>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="empty"
+            className="cw-empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.35"><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" /></svg>
+            <span>Przeciągnij task tutaj aby zacząć pracę</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* ── Sortable task row ── */
 
 function SortableTask({
   task,
+  orderNum,
+  catColor,
   closed,
   onToggle,
   onDelete,
   onMoveToBacklog,
 }: {
   task: Task;
+  orderNum: number;
+  catColor: string;
   closed: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onMoveToBacklog: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: { type: 'task', task },
+  });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   };
 
   const priorityDots: Record<string, number> = { LOW: 1, MEDIUM: 2, HIGH: 3 };
@@ -314,6 +466,17 @@ function SortableTask({
           </svg>
         </button>
       )}
+
+      <motion.span
+        className="task-order"
+        style={{ backgroundColor: catColor, color: darken(catColor) }}
+        key={orderNum}
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+      >
+        {orderNum}
+      </motion.span>
 
       <motion.button
         className={`checkbox ${task.completed ? 'checkbox--checked' : ''}`}
@@ -347,11 +510,7 @@ function SortableTask({
 
       <div className="task-meta">
         {task.estimatedMinutes > 0 && (
-          <span className="task-time-tag">
-            {task.estimatedMinutes >= 60
-              ? `${Math.floor(task.estimatedMinutes / 60)}h${task.estimatedMinutes % 60 ? ` ${task.estimatedMinutes % 60}m` : ''}`
-              : `${task.estimatedMinutes}m`}
-          </span>
+          <span className="task-time-tag">{formatTime(task.estimatedMinutes)}</span>
         )}
         <span className="priority-dots">
           {Array.from({ length: priorityDots[task.priority] || 2 }).map((_, i) => (
@@ -384,6 +543,21 @@ function SortableTask({
   );
 }
 
+/* ── Drag overlay (ghost while dragging) ── */
+
+function TaskDragOverlay({ task, catColor }: { task: Task; catColor: string }) {
+  return (
+    <div className="task-item task-drag-ghost" style={{ borderColor: catColor }}>
+      <span className="task-order" style={{ backgroundColor: catColor, color: darken(catColor) }}>
+        ⋮
+      </span>
+      <div className="task-content">
+        <span className="task-name">{task.title}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── Category card ── */
 
 function CategoryCard({
@@ -393,7 +567,6 @@ function CategoryCard({
   onToggleTask,
   onDeleteTask,
   onMoveToBacklog,
-  onReorderTasks,
   onEditCategory,
   onDeleteCategory,
   onAddTask,
@@ -404,31 +577,11 @@ function CategoryCard({
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
   onMoveToBacklog: (task: Task) => void;
-  onReorderTasks: (categoryId: number, oldIndex: number, newIndex: number) => void;
   onEditCategory: (id: number, updates: Partial<Category>) => void;
   onDeleteCategory: (id: number) => void;
   onAddTask: (categoryId: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIdx = tasks.findIndex((t) => t.id === active.id);
-    const newIdx = tasks.findIndex((t) => t.id === over.id);
-    if (oldIdx !== -1 && newIdx !== -1) {
-      onReorderTasks(category.id, oldIdx, newIdx);
-    }
-  }
-
-  const darken = (hex: string) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgb(${Math.floor(r * 0.45)}, ${Math.floor(g * 0.45)}, ${Math.floor(b * 0.45)})`;
-  };
 
   return (
     <>
@@ -459,22 +612,22 @@ function CategoryCard({
         </div>
 
         <div className="category-body">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-              <AnimatePresence mode="popLayout">
-                {tasks.map((task) => (
-                  <SortableTask
-                    key={task.id}
-                    task={task}
-                    closed={closed}
-                    onToggle={() => onToggleTask(task.id)}
-                    onDelete={() => onDeleteTask(task.id)}
-                    onMoveToBacklog={() => onMoveToBacklog(task)}
-                  />
-                ))}
-              </AnimatePresence>
-            </SortableContext>
-          </DndContext>
+          <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            <AnimatePresence mode="popLayout">
+              {tasks.map((task, idx) => (
+                <SortableTask
+                  key={task.id}
+                  task={task}
+                  orderNum={idx + 1}
+                  catColor={category.color}
+                  closed={closed}
+                  onToggle={() => onToggleTask(task.id)}
+                  onDelete={() => onDeleteTask(task.id)}
+                  onMoveToBacklog={() => onMoveToBacklog(task)}
+                />
+              ))}
+            </AnimatePresence>
+          </SortableContext>
 
           {tasks.length === 0 && (
             <p className="empty-cat">Brak tasków</p>
@@ -524,6 +677,78 @@ export function TodoSection({
 }: TodoSectionProps) {
   const [addingTaskCat, setAddingTaskCat] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
+  const [draggingTask, setDraggingTask] = useState<Task | null>(null);
+  const [isOverCW, setIsOverCW] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const currentTask = currentTaskId ? tasks.find((t) => t.id === currentTaskId) ?? null : null;
+  const currentCategory = currentTask ? categories.find((c) => c.id === currentTask.categoryId) ?? null : null;
+
+  // Clear currentTask if it got completed externally or deleted
+  useEffect(() => {
+    if (currentTaskId && !tasks.find((t) => t.id === currentTaskId)) {
+      setCurrentTaskId(null);
+    }
+  }, [tasks, currentTaskId]);
+
+  function handleDragStart(event: DragStartEvent) {
+    const task = tasks.find((t) => t.id === event.active.id);
+    if (task) setDraggingTask(task);
+  }
+
+  function handleDragOver(event: any) {
+    setIsOverCW(event.over?.id === 'currently-working');
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setDraggingTask(null);
+    setIsOverCW(false);
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeTask = tasks.find((t) => t.id === active.id);
+    if (!activeTask) return;
+
+    // Dropped onto "currently working" box
+    if (over.id === 'currently-working') {
+      if (!activeTask.completed) {
+        setCurrentTaskId(activeTask.id);
+      }
+      return;
+    }
+
+    // Reorder within same category
+    if (active.id !== over.id) {
+      const overTask = tasks.find((t) => t.id === over.id);
+      if (overTask && activeTask.categoryId === overTask.categoryId) {
+        const catTasks = tasks
+          .filter((t) => t.categoryId === activeTask.categoryId)
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+        const oldIdx = catTasks.findIndex((t) => t.id === active.id);
+        const newIdx = catTasks.findIndex((t) => t.id === over.id);
+        if (oldIdx !== -1 && newIdx !== -1) {
+          onReorderTasks(activeTask.categoryId, oldIdx, newIdx);
+        }
+      }
+    }
+  }
+
+  function handleCWDone() {
+    if (currentTaskId) {
+      onToggleTask(currentTaskId);
+      setCurrentTaskId(null);
+    }
+  }
+
+  function handleCWPutBack() {
+    setCurrentTaskId(null);
+  }
+
+  const draggingCategory = draggingTask
+    ? categories.find((c) => c.id === draggingTask.categoryId)
+    : null;
 
   return (
     <section className="section todo-section">
@@ -542,25 +767,49 @@ export function TodoSection({
         )}
       </div>
 
-      <div className="categories-grid">
-        <AnimatePresence mode="popLayout">
-          {categories.map((cat) => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              tasks={tasks.filter((t) => t.categoryId === cat.id).sort((a, b) => a.sortOrder - b.sortOrder)}
-              closed={closed}
-              onToggleTask={onToggleTask}
-              onDeleteTask={onDeleteTask}
-              onMoveToBacklog={onMoveToBacklog}
-              onReorderTasks={onReorderTasks}
-              onEditCategory={onEditCategory}
-              onDeleteCategory={onDeleteCategory}
-              onAddTask={(catId) => setAddingTaskCat(catId)}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        {!closed && (
+          <CurrentlyWorkingBox
+            task={currentTask}
+            category={currentCategory}
+            closed={closed}
+            onDone={handleCWDone}
+            onPutBack={handleCWPutBack}
+            isOver={isOverCW}
+          />
+        )}
+
+        <div className="categories-grid">
+          <AnimatePresence mode="popLayout">
+            {categories.map((cat) => (
+              <CategoryCard
+                key={cat.id}
+                category={cat}
+                tasks={tasks.filter((t) => t.categoryId === cat.id).sort((a, b) => a.sortOrder - b.sortOrder)}
+                closed={closed}
+                onToggleTask={onToggleTask}
+                onDeleteTask={onDeleteTask}
+                onMoveToBacklog={onMoveToBacklog}
+                onEditCategory={onEditCategory}
+                onDeleteCategory={onDeleteCategory}
+                onAddTask={(catId) => setAddingTaskCat(catId)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+
+        <DragOverlay dropAnimation={null}>
+          {draggingTask && draggingCategory && (
+            <TaskDragOverlay task={draggingTask} catColor={draggingCategory.color} />
+          )}
+        </DragOverlay>
+      </DndContext>
 
       <AnimatePresence>
         {addingTaskCat !== null && (

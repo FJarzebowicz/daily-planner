@@ -549,6 +549,169 @@
   font-style: italic;
 }
 
+/* ── Currently Working On box ── */
+.cw-box {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: all 0.3s var(--ease);
+  background: var(--bg);
+  position: relative;
+}
+.cw-box--over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.cw-box--active {
+  border-style: solid;
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(79,70,229,0.03) 0%, rgba(79,70,229,0.07) 100%);
+  box-shadow: 0 0 24px rgba(79,70,229,0.08);
+  animation: cw-pulse 3s ease-in-out infinite;
+}
+@keyframes cw-pulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(79,70,229,0.08); }
+  50% { box-shadow: 0 0 32px rgba(79,70,229,0.16); }
+}
+
+.cw-content { display: flex; flex-direction: column; gap: 14px; }
+
+.cw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cw-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+}
+
+.cw-timer {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cw-task {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cw-task-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.cw-task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cw-cat-tag {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
+}
+
+.cw-time-tag {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-warm);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.cw-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cw-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.cw-btn--done {
+  background: var(--green);
+  color: white;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.3);
+}
+.cw-btn--done:hover {
+  box-shadow: 0 4px 14px rgba(22,163,74,0.4);
+}
+.cw-btn--back {
+  background: var(--bg-warm);
+  color: var(--text-secondary);
+}
+.cw-btn--back:hover { background: var(--border-strong); }
+
+.cw-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ── Task order badge ── */
+.task-order {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+/* ── Drag overlay ghost ── */
+.task-drag-ghost {
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-lg);
+  border-width: 2px;
+  border-style: solid;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
 /* Task item */
 .task-item {
   display: flex;
