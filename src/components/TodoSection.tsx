@@ -158,8 +158,6 @@ function CategoryCard({
   onAddTask: (categoryId: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState(category.name);
-  const [editColor, setEditColor] = useState(category.color);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -171,11 +169,6 @@ function CategoryCard({
     if (oldIdx !== -1 && newIdx !== -1) {
       onReorderTasks(category.id, oldIdx, newIdx);
     }
-  }
-
-  function saveEdit() {
-    onEditCategory(category.id, { name: editName, color: editColor });
-    setEditing(false);
   }
 
   const darken = (hex: string) => {
@@ -195,50 +188,53 @@ function CategoryCard({
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
     >
-      <div className="category-header" style={{ backgroundColor: category.color }}>
+      <AnimatePresence mode="wait">
         {editing ? (
-          <div className="category-edit-form">
-            <input
-              className="cat-edit-input"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-              autoFocus
+          <motion.div
+            key="edit-form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <CategoryFormWidget
+              initialName={category.name}
+              initialColor={category.color}
+              submitLabel="Zapisz"
+              onSubmit={(data) => {
+                onEditCategory(category.id, data);
+                setEditing(false);
+              }}
+              onCancel={() => setEditing(false)}
             />
-            <div className="color-palette-mini">
-              {PASTEL_COLORS.map((c) => (
-                <button
-                  key={c.hex}
-                  className={`color-dot ${editColor === c.hex ? 'color-dot--active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
-                  onClick={() => setEditColor(c.hex)}
-                />
-              ))}
-            </div>
-            <div className="cat-edit-actions">
-              <button className="btn-sm btn-save" onClick={saveEdit}>Zapisz</button>
-              <button className="btn-sm btn-cancel" onClick={() => setEditing(false)}>Anuluj</button>
-            </div>
-          </div>
+          </motion.div>
         ) : (
-          <>
-            <h3 className="category-title" style={{ color: darken(category.color) }}>
-              {category.name}
-              <span className="category-count">{tasks.length}</span>
-            </h3>
-            {!closed && (
-              <div className="category-actions">
-                <motion.button className="btn-icon-sm" onClick={() => { setEditName(category.name); setEditColor(category.color); setEditing(true); }} whileHover={{ scale: 1.15 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                </motion.button>
-                <motion.button className="btn-icon-sm" onClick={() => onDeleteCategory(category.id)} whileHover={{ scale: 1.15 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                </motion.button>
-              </div>
-            )}
-          </>
+          <motion.div
+            key="header"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="category-header" style={{ backgroundColor: category.color }}>
+              <h3 className="category-title" style={{ color: darken(category.color) }}>
+                {category.name}
+                <span className="category-count">{tasks.length}</span>
+              </h3>
+              {!closed && (
+                <div className="category-actions">
+                  <motion.button className="btn-icon-sm" onClick={() => setEditing(true)} whileHover={{ scale: 1.15 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  </motion.button>
+                  <motion.button className="btn-icon-sm" onClick={() => onDeleteCategory(category.id)} whileHover={{ scale: 1.15 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                  </motion.button>
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       <div className="category-body">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -382,74 +378,79 @@ function AddTaskModal({
   );
 }
 
-function AddCategoryModal({
-  onAdd,
-  onClose,
+function CategoryFormWidget({
+  initialName = '',
+  initialColor = PASTEL_COLORS[0].hex,
+  submitLabel = 'Dodaj',
+  onSubmit,
+  onCancel,
 }: {
-  onAdd: (data: { name: string; color: string }) => void;
-  onClose: () => void;
+  initialName?: string;
+  initialColor?: string;
+  submitLabel?: string;
+  onSubmit: (data: { name: string; color: string }) => void;
+  onCancel: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [color, setColor] = useState<string>(PASTEL_COLORS[0].hex);
+  const [name, setName] = useState(initialName);
+  const [color, setColor] = useState(initialColor);
+  const [focused, setFocused] = useState(false);
+  const hasValue = name.length > 0;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onAdd({ name: name.trim(), color });
-    onClose();
+    onSubmit({ name: name.trim(), color });
   }
 
   return (
-    <motion.div
-      className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
+    <motion.form
+      className="cat-form-widget"
+      initial={{ opacity: 0, height: 0, scale: 0.97 }}
+      animate={{ opacity: 1, height: 'auto', scale: 1 }}
+      exit={{ opacity: 0, height: 0, scale: 0.97 }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+      onSubmit={handleSubmit}
     >
-      <motion.form
-        className="modal"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-      >
-        <h3 className="modal-title">Nowa kategoria</h3>
-
-        <div className="form-group">
-          <label className="form-label">Nazwa</label>
-          <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="np. Sport, Nauka..." autoFocus />
+      <div className="cat-form-inner">
+        <div className="cat-form-field">
+          <input
+            className="cat-form-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            autoFocus
+          />
+          <label className={`cat-form-label ${focused || hasValue ? 'cat-form-label--float' : ''}`}>
+            Nazwa kategorii
+          </label>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Kolor</label>
-          <div className="color-palette">
-            {PASTEL_COLORS.map((c) => (
-              <motion.button
-                key={c.hex}
-                type="button"
-                className={`color-swatch ${color === c.hex ? 'color-swatch--active' : ''}`}
-                style={{ backgroundColor: c.hex }}
-                onClick={() => setColor(c.hex)}
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                {color === c.hex && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                )}
-              </motion.button>
-            ))}
-          </div>
+        <div className="cat-form-colors">
+          {PASTEL_COLORS.map((c) => (
+            <motion.button
+              key={c.hex}
+              type="button"
+              className={`cat-form-color ${color === c.hex ? 'cat-form-color--active' : ''}`}
+              style={{ backgroundColor: c.hex }}
+              onClick={() => setColor(c.hex)}
+              whileHover={{ scale: 1.12 }}
+              whileTap={{ scale: 0.92 }}
+              title={c.name}
+            />
+          ))}
         </div>
 
-        <div className="modal-actions">
-          <button type="button" className="btn-modal btn-modal--cancel" onClick={onClose}>Anuluj</button>
-          <button type="submit" className="btn-modal btn-modal--save">Dodaj kategorię</button>
+        <div className="cat-form-actions">
+          <button type="button" className="cat-form-btn cat-form-btn--cancel" onClick={onCancel}>
+            Anuluj
+          </button>
+          <button type="submit" className="cat-form-btn cat-form-btn--submit" disabled={!name.trim()}>
+            {submitLabel}
+          </button>
         </div>
-      </motion.form>
-    </motion.div>
+      </div>
+    </motion.form>
   );
 }
 
@@ -507,17 +508,23 @@ export function TodoSection({
       </div>
 
       <AnimatePresence>
+        {showAddCategory && (
+          <CategoryFormWidget
+            onSubmit={(data) => {
+              onAddCategory(data);
+              setShowAddCategory(false);
+            }}
+            onCancel={() => setShowAddCategory(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {addingTaskCat !== null && (
           <AddTaskModal
             categoryId={addingTaskCat}
             onAdd={onAddTask}
             onClose={() => setAddingTaskCat(null)}
-          />
-        )}
-        {showAddCategory && (
-          <AddCategoryModal
-            onAdd={onAddCategory}
-            onClose={() => setShowAddCategory(false)}
           />
         )}
       </AnimatePresence>
