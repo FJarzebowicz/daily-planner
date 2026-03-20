@@ -1,4 +1,8 @@
-const BASE = (import.meta.env.VITE_API_URL || '') + '/api';
+const API_URL =
+  (window as any).__ENV__?.VITE_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  '';
+const BASE = API_URL + '/api';
 
 // ── Token management ──
 let accessToken: string | null = localStorage.getItem('accessToken');
