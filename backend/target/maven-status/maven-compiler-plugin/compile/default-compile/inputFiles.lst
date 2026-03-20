@@ -7,6 +7,8 @@ C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\DayC
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\MealController.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\ProfileController.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\RecurringEventController.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\ShoppingCategoryController.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\ShoppingItemController.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\TaskController.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\controller\ThoughtController.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\DailyPlannerApplication.java
@@ -23,6 +25,8 @@ C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\RecurringEv
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\RefreshRequest.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\RegisterRequest.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\ReorderRequest.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\ShoppingCategoryDto.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\ShoppingItemDto.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\TaskDto.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\ThoughtDto.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\dto\UpdateProfileRequest.java
@@ -36,6 +40,8 @@ C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\MealSlot
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\Priority.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\RecurringEvent.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\RefreshToken.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\ShoppingCategory.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\ShoppingItem.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\Task.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\Thought.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\entity\User.java
@@ -48,6 +54,8 @@ C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\DayR
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\MealRepository.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\RecurringEventRepository.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\RefreshTokenRepository.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\ShoppingCategoryRepository.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\ShoppingItemRepository.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\TaskRepository.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\ThoughtRepository.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\repository\UserRepository.java
@@ -63,5 +71,7 @@ C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\GoogleO
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\MealService.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\ProfileService.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\RecurringEventService.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\ShoppingCategoryService.java
+C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\ShoppingItemService.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\TaskService.java
 C:\projects\daily-planner\backend\src\main\java\com\dailyplanner\service\ThoughtService.java

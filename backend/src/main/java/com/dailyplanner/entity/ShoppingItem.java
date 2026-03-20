@@ -18,6 +18,10 @@ public class ShoppingItem {
     @Column(name = "category_name", nullable = false)
     private String categoryName = "Inne";
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private ShoppingCategory shoppingCategory;
+
     @Column(nullable = false)
     private String name;
 
@@ -47,6 +51,8 @@ public class ShoppingItem {
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public String getUnit() { return unit; }
     public void setUnit(String unit) { this.unit = unit; }
+    public ShoppingCategory getShoppingCategory() { return shoppingCategory; }
+    public void setShoppingCategory(ShoppingCategory shoppingCategory) { this.shoppingCategory = shoppingCategory; }
     public boolean isBought() { return bought; }
     public void setBought(boolean bought) { this.bought = bought; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -82,10 +82,16 @@ export interface RecurringEvent {
   active: boolean;
 }
 
+export interface ShoppingCategory {
+  id: number;
+  name: string;
+}
+
 export interface ShoppingItem {
   id: number;
   name: string;
   categoryName: string;
+  categoryId: number | null;
   quantity: number;
   unit: string;
   bought: boolean;

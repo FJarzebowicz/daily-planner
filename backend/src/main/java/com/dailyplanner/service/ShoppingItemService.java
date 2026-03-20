@@ -1,9 +1,11 @@
 package com.dailyplanner.service;
 
 import com.dailyplanner.dto.ShoppingItemDto;
+import com.dailyplanner.entity.ShoppingCategory;
 import com.dailyplanner.entity.ShoppingItem;
 import com.dailyplanner.entity.User;
 import com.dailyplanner.exception.ResourceNotFoundException;
+import com.dailyplanner.repository.ShoppingCategoryRepository;
 import com.dailyplanner.repository.ShoppingItemRepository;
 import com.dailyplanner.security.SecurityUtil;
 import org.springframework.stereotype.Service;
@@ -15,9 +17,11 @@ import java.util.List;
 public class ShoppingItemService {
 
     private final ShoppingItemRepository repository;
+    private final ShoppingCategoryRepository categoryRepository;
 
-    public ShoppingItemService(ShoppingItemRepository repository) {
+    public ShoppingItemService(ShoppingItemRepository repository, ShoppingCategoryRepository categoryRepository) {
         this.repository = repository;
+        this.categoryRepository = categoryRepository;
     }
 
     public List<ShoppingItemDto> getAll() {
@@ -35,6 +39,7 @@ public class ShoppingItemService {
         item.setCategoryName(dto.categoryName() != null ? dto.categoryName() : "Inne");
         item.setQuantity(dto.quantity());
         item.setUnit(dto.unit());
+        resolveCategory(item, dto.categoryId(), user.getId());
         return ShoppingItemDto.from(repository.save(item));
     }
 
@@ -48,7 +53,19 @@ public class ShoppingItemService {
         item.setQuantity(dto.quantity());
         item.setUnit(dto.unit());
         item.setBought(dto.bought());
+        resolveCategory(item, dto.categoryId(), userId);
         return ShoppingItemDto.from(repository.save(item));
+    }
+
+    private void resolveCategory(ShoppingItem item, Long categoryId, Long userId) {
+        if (categoryId != null) {
+            ShoppingCategory cat = categoryRepository.findByIdAndUserId(categoryId, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Shopping category not found: " + categoryId));
+            item.setShoppingCategory(cat);
+            item.setCategoryName(cat.getName());
+        } else {
+            item.setShoppingCategory(null);
+        }
     }
 
     @Transactional

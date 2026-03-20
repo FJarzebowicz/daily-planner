@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { shoppingApi } from '../api';
-import type { ShoppingItem } from '../types';
+import { shoppingApi, shoppingCategoryApi } from '../api';
+import type { ShoppingItem, ShoppingCategory } from '../types';
 import { SHOPPING_CATEGORIES } from '../types';
 import { NavTabs } from '../components/NavTabs';
 import { UserMenu } from '../components/UserMenu';
@@ -19,16 +19,23 @@ function parseQuickAdd(input: string): { quantity: number; unit: string; name: s
 
 export function ShoppingPage() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [categories, setCategories] = useState<ShoppingCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Inne');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [newCatName, setNewCatName] = useState('');
+  const [showCatManager, setShowCatManager] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fetchItems = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const data = await shoppingApi.getAll();
-      setItems(data as ShoppingItem[]);
+      const [itemsData, catsData] = await Promise.all([
+        shoppingApi.getAll(),
+        shoppingCategoryApi.getAll(),
+      ]);
+      setItems(itemsData as ShoppingItem[]);
+      setCategories(catsData as ShoppingCategory[]);
     } catch {
       // silent
     } finally {
@@ -37,8 +44,20 @@ export function ShoppingPage() {
   }, []);
 
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    fetchData();
+  }, [fetchData]);
+
+  // Build category name list: user categories + fallback defaults for items without a linked category
+  const categoryNames = categories.map((c) => c.name);
+  const allCategoryNames = [...new Set([...categoryNames, ...SHOPPING_CATEGORIES])];
+
+  function getSelectedCategoryName(): string {
+    if (selectedCategoryId) {
+      const cat = categories.find((c) => c.id === selectedCategoryId);
+      return cat ? cat.name : 'Inne';
+    }
+    return 'Inne';
+  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +66,8 @@ export function ShoppingPage() {
     try {
       const item = await shoppingApi.create({
         name: parsed.name,
-        categoryName: selectedCategory,
+        categoryName: getSelectedCategoryName(),
+        categoryId: selectedCategoryId,
         quantity: parsed.quantity,
         unit: parsed.unit,
       });
@@ -86,6 +106,28 @@ export function ShoppingPage() {
     }
   }
 
+  async function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    try {
+      const cat = await shoppingCategoryApi.create({ name: newCatName.trim() });
+      setCategories((prev) => [...prev, cat as ShoppingCategory]);
+      setNewCatName('');
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleDeleteCategory(id: number) {
+    try {
+      await shoppingCategoryApi.delete(id);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+      if (selectedCategoryId === id) setSelectedCategoryId(null);
+    } catch {
+      // silent
+    }
+  }
+
   const boughtCount = items.filter((i) => i.bought).length;
   const totalCount = items.length;
 
@@ -118,6 +160,12 @@ export function ShoppingPage() {
               <strong>{boughtCount}/{totalCount}</strong> Kupione
             </div>
             <div className="header-controls">
+              <button
+                className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
+                onClick={() => setShowCatManager(!showCatManager)}
+              >
+                KATEGORIE
+              </button>
               {boughtCount > 0 && (
                 <button className="btn-clear-bought" onClick={handleClearBought}>
                   USUN KUPIONE
@@ -130,6 +178,34 @@ export function ShoppingPage() {
       </header>
 
       <main className="main shopping-main">
+        {/* Category manager */}
+        {showCatManager && (
+          <div className="cat-manager">
+            <form className="cat-manager-form" onSubmit={handleAddCategory}>
+              <input
+                className="cat-manager-input"
+                placeholder="Nowa kategoria..."
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+              />
+              <button type="submit" className="cat-manager-add">DODAJ</button>
+            </form>
+            <div className="cat-manager-list">
+              {categories.map((cat) => (
+                <div key={cat.id} className="cat-manager-item">
+                  <span>{cat.name}</span>
+                  <button className="cat-manager-delete" onClick={() => handleDeleteCategory(cat.id)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              ))}
+              {categories.length === 0 && (
+                <p className="cat-manager-empty">Brak kategorii — dodaj pierwsza powyzej</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Add form */}
         <form className="shopping-add" onSubmit={handleAdd}>
           <input
@@ -141,11 +217,12 @@ export function ShoppingPage() {
           />
           <select
             className="shopping-category-select"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            value={selectedCategoryId ?? ''}
+            onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
           >
-            {SHOPPING_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+            <option value="">Inne</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
           <button type="submit" className="shopping-add-btn">DODAJ</button>
@@ -159,7 +236,7 @@ export function ShoppingPage() {
           >
             WSZYSTKO
           </button>
-          {SHOPPING_CATEGORIES.map((cat) => (
+          {allCategoryNames.map((cat) => (
             <button
               key={cat}
               className={`shopping-filter ${filterCategory === cat ? 'shopping-filter--active' : ''}`}

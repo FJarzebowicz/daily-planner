@@ -1,4 +1,5 @@
 com\dailyplanner\controller\BacklogTaskController.class
+com\dailyplanner\service\ShoppingItemService.class
 com\dailyplanner\controller\AuthController.class
 com\dailyplanner\dto\DayStatsDto.class
 com\dailyplanner\entity\User.class
@@ -7,18 +8,23 @@ com\dailyplanner\controller\ThoughtController.class
 com\dailyplanner\dto\RegisterRequest.class
 com\dailyplanner\service\ProfileService.class
 com\dailyplanner\entity\Thought.class
+com\dailyplanner\controller\ShoppingCategoryController.class
+com\dailyplanner\entity\ShoppingItem.class
 com\dailyplanner\service\RecurringEventService.class
 com\dailyplanner\service\TaskService.class
 com\dailyplanner\controller\DayController.class
 com\dailyplanner\dto\ThoughtDto.class
+com\dailyplanner\entity\ShoppingCategory.class
 com\dailyplanner\repository\RecurringEventRepository.class
 com\dailyplanner\dto\RefreshRequest.class
+com\dailyplanner\repository\ShoppingCategoryRepository.class
 com\dailyplanner\repository\MealRepository.class
 com\dailyplanner\service\BacklogTaskService.class
 com\dailyplanner\repository\DayRepository.class
 com\dailyplanner\security\SecurityUtil.class
 com\dailyplanner\repository\ThoughtRepository.class
 com\dailyplanner\repository\RefreshTokenRepository.class
+com\dailyplanner\dto\ShoppingCategoryDto.class
 com\dailyplanner\entity\MealSlot.class
 com\dailyplanner\dto\CategoryDto.class
 com\dailyplanner\repository\CategoryRepository.class
@@ -40,6 +46,8 @@ com\dailyplanner\entity\BacklogTask.class
 com\dailyplanner\repository\BacklogTaskRepository.class
 com\dailyplanner\dto\GoogleCallbackRequest.class
 com\dailyplanner\exception\GlobalExceptionHandler.class
+com\dailyplanner\service\ShoppingCategoryService.class
+com\dailyplanner\dto\ShoppingItemDto.class
 com\dailyplanner\repository\UserRepository.class
 com\dailyplanner\dto\UserProfileDto.class
 com\dailyplanner\controller\TaskController.class
@@ -54,6 +62,7 @@ com\dailyplanner\entity\Category.class
 com\dailyplanner\entity\Meal.class
 com\dailyplanner\service\CategoryService.class
 com\dailyplanner\service\MealService.class
+com\dailyplanner\controller\ShoppingItemController.class
 com\dailyplanner\dto\DayDto.class
 com\dailyplanner\service\DayService.class
 com\dailyplanner\dto\MealDto.class
@@ -67,3 +76,4 @@ com\dailyplanner\dto\TaskDto.class
 com\dailyplanner\repository\TaskRepository.class
 com\dailyplanner\dto\RecurringEventDto.class
 com\dailyplanner\entity\RefreshToken.class
+com\dailyplanner\repository\ShoppingItemRepository.class

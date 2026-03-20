@@ -8,6 +8,7 @@ public record ShoppingItemDto(
     Long id,
     @NotBlank String name,
     String categoryName,
+    Long categoryId,
     @Min(1) int quantity,
     String unit,
     boolean bought,
@@ -16,6 +17,7 @@ public record ShoppingItemDto(
     public static ShoppingItemDto from(ShoppingItem item) {
         return new ShoppingItemDto(
             item.getId(), item.getName(), item.getCategoryName(),
+            item.getShoppingCategory() != null ? item.getShoppingCategory().getId() : null,
             item.getQuantity(), item.getUnit(), item.isBought(),
             item.getCreatedAt().toString()
         );

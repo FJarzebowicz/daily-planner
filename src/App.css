@@ -1961,6 +1961,102 @@
   margin: 0;
 }
 
+/* Category manager button */
+.btn-manage-cats {
+  padding: 8px 20px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text);
+  transition: all var(--transition-fast);
+}
+
+.btn-manage-cats:hover,
+.btn-manage-cats--active {
+  background: var(--text);
+  color: #fff;
+}
+
+/* Category manager panel */
+.cat-manager {
+  border: 1px solid var(--border-strong);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.cat-manager-form {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+}
+
+.cat-manager-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-right: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: transparent;
+  outline: none;
+}
+
+.cat-manager-input:focus {
+  border-color: var(--text);
+}
+
+.cat-manager-add {
+  padding: 10px 20px;
+  border: 1px solid var(--border-strong);
+  background: var(--text);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  transition: background var(--transition-fast);
+}
+
+.cat-manager-add:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cat-manager-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.cat-manager-delete {
+  background: none;
+  border: none;
+  padding: 2px;
+  color: var(--text-faint);
+  transition: color var(--transition-fast);
+}
+
+.cat-manager-delete:hover {
+  color: var(--accent);
+}
+
+.cat-manager-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 /* Shopping responsive */
 @media (max-width: 600px) {
   .shopping-add {
