@@ -1,0 +1,48 @@
+spring:
+  profiles:
+    active: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/daily_planner
+    username: postgres
+    password: # UZUPELNIJ HASLO
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:change-me}
+            client-secret: ${GOOGLE_CLIENT_SECRET:change-me}
+            scope: email,profile
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:daily-planner-jwt-secret-key-minimum-32-chars-long-for-hs256}
+    access-token-expiration-ms: 900000
+    refresh-token-expiration-ms: 604800000
+  google:
+    redirect-uri: http://localhost:5173/auth/google/callback
