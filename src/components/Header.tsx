@@ -101,8 +101,27 @@ function TimePicker({
 
 export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, onUpdateSleep, onCloseDay, onNavigate }: HeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const date = parseLocalDate(currentDate);
+
+  function startHold() {
+    if (day.closed) return;
+    setHoldProgress(true);
+    holdTimerRef.current = setTimeout(() => {
+      setHoldProgress(false);
+      onCloseDay();
+    }, 2000);
+  }
+
+  function cancelHold() {
+    setHoldProgress(false);
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }
 
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t) => t.completed).length;
@@ -199,10 +218,14 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
           <div className="header-close">
             {!day.closed ? (
               <button
-                className="btn-close-day"
-                onClick={onCloseDay}
+                className={`btn-close-day ${holdProgress ? 'btn-close-day--holding' : ''}`}
+                onMouseDown={startHold}
+                onMouseUp={cancelHold}
+                onMouseLeave={cancelHold}
+                onTouchStart={startHold}
+                onTouchEnd={cancelHold}
               >
-                ZAMKNIJ DZIEN
+                {holdProgress ? 'PRZYTRZYMAJ...' : 'ZAMKNIJ DZIEN'}
               </button>
             ) : (
               <span className="day-closed-badge">Zamkniety</span>

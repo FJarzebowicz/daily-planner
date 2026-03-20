@@ -20,6 +20,7 @@ import { MealsSection } from './components/MealsSection';
 import { NotesSection } from './components/NotesSection';
 import { EventsSection } from './components/EventsSection';
 import { Backlog } from './components/Backlog';
+import { CustomCursor } from './components/CustomCursor';
 import './App.css';
 
 /* Custom collision detection: prioritize special drop zones, fall back to closestCenter for tasks */
@@ -44,6 +45,7 @@ function App() {
   const [backlog, setBacklog] = useState<BacklogTask[]>([]);
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [allDone, setAllDone] = useState(false);
   const slideDir = useRef(0);
 
   // DnD state
@@ -93,6 +95,15 @@ function App() {
     }
   }, [tasks, currentTaskId]);
 
+  // Easter egg: all tasks done
+  useEffect(() => {
+    if (tasks.length > 0 && tasks.every((t) => t.completed)) {
+      setAllDone(true);
+      const timer = setTimeout(() => setAllDone(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [tasks]);
+
   function navigateToDate(date: string) {
     if (!date || date === currentDate) return;
     slideDir.current = date > currentDate ? 1 : -1;
@@ -113,8 +124,6 @@ function App() {
 
   async function closeDay() {
     if (!day || day.closed) return;
-    const confirmed = window.confirm('Czy na pewno chcesz zamknąć dzień? Ta operacja jest nieodwracalna.');
-    if (!confirmed) return;
     const updated = await dayApi.update(currentDate, { ...day, closed: true });
     setDay(updated as DayData);
   }
@@ -145,8 +154,16 @@ function App() {
   }
 
   async function toggleTask(id: number) {
-    const updated = await taskApi.toggle(id);
-    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    // Optimistic update
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+    try {
+      const updated = await taskApi.toggle(id);
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    } catch (err) {
+      // Revert on failure
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+      console.error('Failed to toggle task:', err);
+    }
   }
 
   async function deleteTask(id: number) {
@@ -269,10 +286,10 @@ function App() {
   }
 
   // ── Meal ──
-  async function updateMeal(id: number, updates: { description: string; eaten: boolean }) {
+  const updateMeal = useCallback(async (id: number, updates: { description: string; eaten: boolean }) => {
     const updated = await mealApi.update(id, updates);
     setMeals((prev) => prev.map((m) => (m.id === id ? (updated as MealSlot) : m)));
-  }
+  }, []);
 
   // ── Notes ──
   async function addNote(content: string) {
@@ -327,8 +344,49 @@ function App() {
     return <div className="app loading">Ładowanie...</div>;
   }
 
+  // Compute day-of-year for watermark
+  const dayOfYear = Math.ceil((new Date(currentDate).getTime() - new Date(new Date(currentDate).getFullYear(), 0, 0).getTime()) / 86400000);
+
   return (
     <div className="app">
+      <CustomCursor />
+
+      {/* All done confetti easter egg */}
+      <AnimatePresence>
+        {allDone && (
+          <motion.div
+            className="all-done-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="confetti-container">
+              {Array.from({ length: 40 }).map((_, i) => (
+                <div key={i} className="confetti-piece" style={{
+                  '--x': `${Math.random() * 100}vw`,
+                  '--delay': `${Math.random() * 0.5}s`,
+                  '--rotation': `${Math.random() * 720 - 360}deg`,
+                  '--color': ['#4F46E5', '#7C3AED', '#84CC16', '#F59E0B', '#EF4444', '#EC4899'][i % 6],
+                } as React.CSSProperties} />
+              ))}
+            </div>
+            <motion.span
+              className="all-done-text"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              Dzien ogarniety!
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Day-of-year watermark */}
+      <div className="watermark-number" aria-hidden="true">{String(dayOfYear).padStart(3, '0')}</div>
+
       <Header
         day={day!}
         tasks={tasks}
