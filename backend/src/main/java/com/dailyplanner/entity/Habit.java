@@ -45,6 +45,14 @@ public class Habit {
     @Column(name = "streak_goal")
     private Integer streakGoal;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "goal_id")
+    private Goal goal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "milestone_id")
+    private Milestone milestone;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -72,6 +80,10 @@ public class Habit {
     public void setActive(boolean active) { this.active = active; }
     public Integer getStreakGoal() { return streakGoal; }
     public void setStreakGoal(Integer streakGoal) { this.streakGoal = streakGoal; }
+    public Goal getGoal() { return goal; }
+    public void setGoal(Goal goal) { this.goal = goal; }
+    public Milestone getMilestone() { return milestone; }
+    public void setMilestone(Milestone milestone) { this.milestone = milestone; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
