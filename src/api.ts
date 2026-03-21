@@ -164,6 +164,12 @@ export interface TaskResponse {
   priority: string;
   sortOrder: number;
   completed: boolean;
+  globalOrder: number | null;
+}
+
+export interface SwapResponse {
+  updated: TaskResponse;
+  displaced: TaskResponse | null;
 }
 
 export const taskApi = {
@@ -176,6 +182,8 @@ export const taskApi = {
   delete: (id: number) => request<void>(`/tasks/${id}`, { method: 'DELETE' }),
   reorder: (taskIds: number[]) =>
     request<void>('/tasks/reorder', { method: 'PATCH', body: JSON.stringify({ taskIds }) }),
+  setGlobalOrder: (id: number, globalOrder: number | null) =>
+    request<SwapResponse>(`/tasks/${id}/global-order`, { method: 'PATCH', body: JSON.stringify({ globalOrder }) }),
 };
 
 // ── Meal ──

@@ -25,7 +25,11 @@
       "Bash(xargs grep:*)",
       "Bash(npx --yes svg2png-cli /c/projects/daily-planner/public/favicon.svg --width 192 --height 192 --output /c/projects/daily-planner/public/icon-192.png)",
       "Bash(npx --yes sharp-cli -i public/favicon.svg -o public/icon-192.png resize 192 192)",
-      "Bash(npx sharp-cli:*)"
+      "Bash(npx sharp-cli:*)",
+      "Bash(grep -E \"\\\\.\\(tsx?|json\\)$\")",
+      "Bash(./node_modules/.bin/tsc --noEmit 2>&1)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(sudo npm:*)"
     ]
   }
 }

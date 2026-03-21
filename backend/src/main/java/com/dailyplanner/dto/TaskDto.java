@@ -16,7 +16,8 @@ public record TaskDto(
     int sortOrder,
     boolean completed,
     Long goalId,
-    Long milestoneId
+    Long milestoneId,
+    Integer globalOrder
 ) {
     public static TaskDto from(Task task) {
         return new TaskDto(
@@ -30,7 +31,8 @@ public record TaskDto(
             task.getSortOrder(),
             task.isCompleted(),
             task.getGoal() != null ? task.getGoal().getId() : null,
-            task.getMilestone() != null ? task.getMilestone().getId() : null
+            task.getMilestone() != null ? task.getMilestone().getId() : null,
+            task.getGlobalOrder()
         );
     }
 }

@@ -38,6 +38,9 @@ public class Task {
     @Column(name = "is_completed", nullable = false)
     private boolean completed = false;
 
+    @Column(name = "global_order")
+    private Integer globalOrder;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "goal_id")
     private Goal goal;
@@ -77,6 +80,9 @@ public class Task {
 
     public boolean isCompleted() { return completed; }
     public void setCompleted(boolean completed) { this.completed = completed; }
+
+    public Integer getGlobalOrder() { return globalOrder; }
+    public void setGlobalOrder(Integer globalOrder) { this.globalOrder = globalOrder; }
 
     public Goal getGoal() { return goal; }
     public void setGoal(Goal goal) { this.goal = goal; }

@@ -48,6 +48,10 @@ function App() {
   const [allDone, setAllDone] = useState(false);
   const slideDir = useRef(0);
 
+  // Swap toast
+  const [swapToast, setSwapToast] = useState<{ title: string; newOrder: number | null } | null>(null);
+  const swapToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // DnD state
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
   const [draggingTask, setDraggingTask] = useState<Task | null>(null);
@@ -184,6 +188,21 @@ function App() {
     setTasks([...otherTasks, ...updatedTasks]);
 
     await taskApi.reorder(updatedTasks.map((t) => t.id));
+  }
+
+  async function setGlobalOrder(taskId: number, globalOrder: number | null): Promise<{ displacedTitle: string | null }> {
+    const result = await taskApi.setGlobalOrder(taskId, globalOrder);
+    setTasks((prev) => prev.map((t) => {
+      if (t.id === result.updated.id) return { ...t, globalOrder: result.updated.globalOrder };
+      if (result.displaced && t.id === result.displaced.id) return { ...t, globalOrder: result.displaced.globalOrder };
+      return t;
+    }));
+    if (result.displaced) {
+      if (swapToastTimer.current) clearTimeout(swapToastTimer.current);
+      setSwapToast({ title: result.displaced.title, newOrder: result.displaced.globalOrder });
+      swapToastTimer.current = setTimeout(() => setSwapToast(null), 3000);
+    }
+    return { displacedTitle: result.displaced?.title ?? null };
   }
 
   async function moveTaskToBacklog(task: Task) {
@@ -397,6 +416,24 @@ function App() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {swapToast && (
+          <motion.div
+            className="swap-toast"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.2 }}
+          >
+            <span className="swap-toast-icon">#</span>
+            <span>
+              <strong>{swapToast.title}</strong> przeniesiony na{' '}
+              {swapToast.newOrder != null ? `#${String(swapToast.newOrder).padStart(2, '0')}` : 'brak numeru'}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Header
         day={day!}
         tasks={tasks}
@@ -444,6 +481,7 @@ function App() {
                   isOverCW={isOverCW}
                   habits={habits}
                   onToggleHabit={toggleHabit}
+                  onSetGlobalOrder={setGlobalOrder}
                 />
                 <div className="grid-bottom">
                   <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />

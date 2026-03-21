@@ -47,6 +47,7 @@ export interface Task {
   priority: string;
   sortOrder: number;
   completed: boolean;
+  globalOrder: number | null;
 }
 
 export interface BacklogTask {

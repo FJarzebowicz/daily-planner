@@ -24,6 +24,7 @@ interface TodoSectionProps {
   isOverCW: boolean;
   habits?: HabitForDate[];
   onToggleHabit?: (id: number, completed: boolean) => void;
+  onSetGlobalOrder?: (taskId: number, globalOrder: number | null) => Promise<{ displacedTitle: string | null }>;
 }
 
 /* ── helpers ── */
@@ -427,6 +428,7 @@ function SortableTask({
   onMoveToBacklog,
   onMoveToPosition,
   onStartWorking,
+  onSetGlobalOrder,
 }: {
   task: Task;
   orderNum: number;
@@ -437,9 +439,12 @@ function SortableTask({
   onMoveToBacklog: () => void;
   onMoveToPosition: (newPos: number) => void;
   onStartWorking?: () => void;
+  onSetGlobalOrder?: (globalOrder: number | null) => Promise<{ displacedTitle: string | null }>;
 }) {
   const [editingOrder, setEditingOrder] = useState(false);
   const [orderInput, setOrderInput] = useState('');
+  const [editingGlobal, setEditingGlobal] = useState(false);
+  const [globalInput, setGlobalInput] = useState('');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { type: 'task', task },
@@ -457,6 +462,19 @@ function SortableTask({
     }
     setEditingOrder(false);
     setOrderInput('');
+  }
+
+  function handleGlobalSubmit() {
+    if (!onSetGlobalOrder) { setEditingGlobal(false); return; }
+    const trimmed = globalInput.trim();
+    if (trimmed === '') {
+      onSetGlobalOrder(null);
+    } else {
+      const num = parseInt(trimmed, 10);
+      if (!isNaN(num) && num >= 1) onSetGlobalOrder(num);
+    }
+    setEditingGlobal(false);
+    setGlobalInput('');
   }
 
   return (
@@ -506,6 +524,47 @@ function SortableTask({
           </motion.span>
         )}
         <span className={`tc-title ${task.completed ? 'tc-title--done' : ''}`}>{task.title}</span>
+
+        {/* Global order badge */}
+        {onSetGlobalOrder && !closed && (
+          editingGlobal ? (
+            <input
+              className="tc-global-input"
+              type="number"
+              min={1}
+              placeholder="—"
+              value={globalInput}
+              onChange={(e) => setGlobalInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleGlobalSubmit();
+                if (e.key === 'Escape') { setEditingGlobal(false); setGlobalInput(''); }
+              }}
+              onBlur={handleGlobalSubmit}
+              autoFocus
+            />
+          ) : task.globalOrder != null ? (
+            <motion.span
+              className="tc-global-badge"
+              key={task.globalOrder}
+              initial={{ opacity: 0.5, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.15 }}
+              onClick={() => { setGlobalInput(String(task.globalOrder)); setEditingGlobal(true); }}
+              title="Numer globalny — kliknij aby zmienić"
+            >
+              #{String(task.globalOrder).padStart(2, '0')}
+            </motion.span>
+          ) : (
+            <span
+              className="tc-global-add"
+              onClick={() => { setGlobalInput(''); setEditingGlobal(true); }}
+              title="Ustaw numer globalny"
+            >
+              #
+            </span>
+          )
+        )}
+
         <motion.button
           className={`tc-check ${task.completed ? 'tc-check--checked' : ''}`}
           onClick={onToggle}
@@ -659,6 +718,7 @@ function CategoryCard({
   habits,
   onToggleHabit,
   onStartWorking,
+  onSetGlobalOrder,
 }: {
   category: Category;
   tasks: Task[];
@@ -673,6 +733,7 @@ function CategoryCard({
   habits?: HabitForDate[];
   onToggleHabit?: (id: number, completed: boolean) => void;
   onStartWorking?: (taskId: number) => void;
+  onSetGlobalOrder?: (taskId: number, globalOrder: number | null) => Promise<{ displacedTitle: string | null }>;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -721,6 +782,7 @@ function CategoryCard({
                     if (idx !== newIdx) onReorderTasks(category.id, idx, newIdx);
                   }}
                   onStartWorking={onStartWorking ? () => onStartWorking(task.id) : undefined}
+                  onSetGlobalOrder={onSetGlobalOrder ? (g) => onSetGlobalOrder(task.id, g) : undefined}
                 />
               ))}
             </AnimatePresence>
@@ -790,6 +852,7 @@ export function TodoSection({
   isOverCW,
   habits = [],
   onToggleHabit,
+  onSetGlobalOrder,
 }: TodoSectionProps) {
   const [addingTaskCat, setAddingTaskCat] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -864,6 +927,7 @@ export function TodoSection({
               habits={habitsByCategoryId.get(cat.id)}
               onToggleHabit={onToggleHabit}
               onStartWorking={onSetCurrentTask}
+              onSetGlobalOrder={onSetGlobalOrder}
             />
           ))}
         </AnimatePresence>

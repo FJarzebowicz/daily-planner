@@ -1,6 +1,8 @@
 package com.dailyplanner.service;
 
+import com.dailyplanner.dto.GlobalOrderRequest;
 import com.dailyplanner.dto.ReorderRequest;
+import com.dailyplanner.dto.SwapResponse;
 import com.dailyplanner.dto.TaskDto;
 import com.dailyplanner.entity.*;
 import com.dailyplanner.exception.DayClosedException;
@@ -88,6 +90,35 @@ public class TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
         if (task.getDay().isClosed()) throw new DayClosedException();
         taskRepository.delete(task);
+    }
+
+    @Transactional
+    public SwapResponse setGlobalOrder(Long id, GlobalOrderRequest request) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+        if (task.getDay() != null && task.getDay().isClosed()) throw new DayClosedException();
+
+        Integer newGlobalOrder = request.globalOrder();
+
+        if (newGlobalOrder == null) {
+            task.setGlobalOrder(null);
+            return new SwapResponse(TaskDto.from(taskRepository.save(task)), null);
+        }
+
+        Long dayId = task.getDay() != null ? task.getDay().getId() : null;
+        TaskDto displaced = null;
+
+        if (dayId != null) {
+            var existing = taskRepository.findByDayIdAndGlobalOrder(dayId, newGlobalOrder);
+            if (existing.isPresent() && !existing.get().getId().equals(id)) {
+                Task other = existing.get();
+                other.setGlobalOrder(task.getGlobalOrder());
+                displaced = TaskDto.from(taskRepository.save(other));
+            }
+        }
+
+        task.setGlobalOrder(newGlobalOrder);
+        return new SwapResponse(TaskDto.from(taskRepository.save(task)), displaced);
     }
 
     @Transactional

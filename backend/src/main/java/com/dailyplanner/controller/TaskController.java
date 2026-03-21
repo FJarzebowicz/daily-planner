@@ -1,6 +1,8 @@
 package com.dailyplanner.controller;
 
+import com.dailyplanner.dto.GlobalOrderRequest;
 import com.dailyplanner.dto.ReorderRequest;
+import com.dailyplanner.dto.SwapResponse;
 import com.dailyplanner.dto.TaskDto;
 import com.dailyplanner.service.TaskService;
 import jakarta.validation.Valid;
@@ -45,6 +47,11 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         taskService.delete(id);
+    }
+
+    @PatchMapping("/tasks/{id}/global-order")
+    public SwapResponse setGlobalOrder(@PathVariable Long id, @RequestBody GlobalOrderRequest request) {
+        return taskService.setGlobalOrder(id, request);
     }
 
     @PatchMapping("/tasks/reorder")
