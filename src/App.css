@@ -1044,9 +1044,7 @@
 .btn-modal--save:hover { background: var(--accent); }
 .btn-modal--save:disabled { opacity: 0.2; cursor: not-allowed; }
 
-@media (max-width: 520px) {
-  .modal { padding: 36px 24px 24px; max-width: 100%; }
-}
+/* Modal responsive — see consolidated responsive block at end of file */
 
 /* ===== MEALS ===== */
 .meals-grid {
@@ -2058,25 +2056,7 @@
 }
 
 /* Shopping responsive */
-@media (max-width: 600px) {
-  .shopping-add {
-    flex-direction: column;
-    border: none;
-  }
-  .shopping-add > * {
-    border: 1px solid var(--border-strong);
-    border-bottom: none;
-  }
-  .shopping-add > *:last-child {
-    border-bottom: 1px solid var(--border-strong);
-  }
-  .shopping-category-select {
-    border-left: none;
-  }
-  .shopping-add-btn {
-    border-left: none;
-  }
-}
+/* Shopping responsive — see consolidated responsive block at end of file */
 
 /* ===== FOOD DATABASE PAGE ===== */
 .fd-app { padding-bottom: 80px; }
@@ -2510,16 +2490,7 @@
   color: var(--text);
 }
 
-/* Food responsive */
-@media (max-width: 600px) {
-  .fd-grid {
-    grid-template-columns: 1fr;
-  }
-  .fd-detail {
-    margin: 0;
-    max-width: 100%;
-  }
-}
+/* Food responsive — see consolidated responsive block at end of file */
 
 /* ============================================================
    HABITS
@@ -3161,21 +3132,7 @@
   cursor: default;
 }
 
-/* Habits responsive */
-@media (max-width: 600px) {
-  .habit-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .habit-stat:nth-child(2) { border-right: none; }
-  .habit-form-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .habit-detail {
-    margin: 0;
-    max-width: 100%;
-  }
-}
+/* Habits responsive — see consolidated responsive block at end of file */
 
 /* ===== GOALS ===== */
 
@@ -3619,16 +3576,330 @@
   line-height: 1.5;
 }
 
-/* Goals responsive */
-@media (max-width: 600px) {
-  .goals-grid {
-    grid-template-columns: 1fr;
+/* ============================================================
+   RESPONSIVE — MOBILE & TABLET
+   ============================================================ */
+
+/* ── Page header (NavTabs + UserMenu wrapper) ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+/* ── TABLET (max 768px) ── */
+@media (max-width: 768px) {
+  /* Header */
+  .header-top {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 0 12px;
   }
+  .header-left { width: 100%; }
+  .header-right {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+  .header-controls { gap: 8px; flex-wrap: wrap; }
+  .header-date { font-size: clamp(48px, 10vw, 72px); }
+
+  /* Stats row */
+  .stats-row { flex-wrap: wrap; gap: 8px; }
+  .stats-index { font-size: 11px; }
+
+  /* Planner sections */
+  .grid-bottom { grid-template-columns: 1fr; }
+
+  /* Shopping */
+  .shopping-filters { flex-wrap: wrap; gap: 4px; }
+
+  /* Food */
+  .fd-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Goals */
+  .goals-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Backlog */
+  .backlog-sidebar { width: 100%; max-width: 100%; }
+  .backlog-header { padding: 24px 20px 0; }
+  .backlog-form { padding: 0 20px; }
+  .backlog-list { padding: 0 20px; }
+}
+
+/* ── MOBILE (max 600px) ── */
+@media (max-width: 600px) {
+  /* App container */
+  .app { padding: 0 16px 100px; }
+  .header {
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Nav tabs → bottom bar */
+  .nav-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    background: var(--bg);
+    border-bottom: none;
+    border-top: 1px solid var(--border-strong);
+    margin: 0;
+    justify-content: space-around;
+    padding: 0;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  }
+  .nav-tab {
+    padding: 12px 4px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    flex: 1;
+    text-align: center;
+    border-bottom: none;
+    border-top: 2px solid transparent;
+    margin: 0;
+  }
+  .nav-tab--active {
+    border-bottom: none;
+    border-top-color: var(--accent);
+  }
+
+  /* Page header (non-planner pages) */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .page-header .nav-tabs {
+    /* Already fixed to bottom, hide from flow in header */
+  }
+
+  /* Header planner */
+  .header-top {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0 10px;
+  }
+  .header-left .nav-tabs {
+    /* Hidden from inline, shown at bottom */
+  }
+  .header-right {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+    gap: 6px;
+  }
+  .header-controls {
+    gap: 6px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .header-date { font-size: clamp(36px, 10vw, 56px); }
+  .header-day-name { font-size: clamp(10px, 2vw, 14px); }
+  .header-nav { gap: 8px; }
+  .nav-arrow { width: 44px; height: 44px; }
+  .btn-close-day { padding: 12px 20px; font-size: 11px; }
+
+  /* Section padding */
+  .section { padding: clamp(16px, 4vw, 32px); }
+  .section-title { font-size: 20px; letter-spacing: 4px; }
+  .section-header { margin-bottom: 20px; }
+
+  /* Task cards — touch targets */
+  .tc-check {
+    width: 28px;
+    height: 28px;
+  }
+  .tc-top { gap: 8px; }
+  .tc-bottom { min-height: 32px; }
+  .tc-pill { font-size: 9px; padding: 3px 8px; }
+  .tc-action { width: 32px; height: 32px; }
+  .add-task-btn { padding: 14px 16px; min-height: 44px; }
+  .btn-add-category { min-height: 44px; padding: 10px 16px; }
+  .btn-icon-sm { width: 32px; height: 32px; }
+
+  /* Currently working box */
+  .cw-box { padding: 16px; }
+  .cw-btn { padding: 10px 16px; min-height: 44px; }
+
+  /* Meals — touch targets */
+  .meal-card { padding: 16px; }
+  .toggle { min-width: 44px; min-height: 28px; }
+  .meal-input { font-size: 16px; padding: 8px 0; min-height: 44px; }
+
+  /* Notes */
+  .note-textarea { font-size: 16px; min-height: 44px; }
+  .btn-add-note { min-height: 44px; padding: 10px 16px; }
+
+  /* Events */
+  .btn-add-event { min-height: 44px; padding: 10px 16px; }
+  .btn-add-event-confirm { min-height: 44px; }
+  .etp-btn { min-height: 44px; min-width: 60px; font-size: 14px; }
+  .etp-option { min-height: 36px; padding: 8px 12px; }
+
+  /* Modals — near full-screen on mobile */
+  .modal-overlay { padding: 8px; }
+  .modal {
+    padding: 32px 20px 24px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 22px; margin-bottom: 24px; }
+  .modal-close { width: 44px; height: 44px; top: 8px; right: 8px; }
+  .btn-modal { min-height: 44px; padding: 12px 20px; }
+
+  /* Shopping — full width */
+  .shopping-main { max-width: 100%; }
+  .shopping-add {
+    flex-direction: column;
+    border: none;
+  }
+  .shopping-add > * {
+    border: 1px solid var(--border-strong);
+    border-bottom: none;
+  }
+  .shopping-add > *:last-child {
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .shopping-category-select { border-left: none; }
+  .shopping-add-btn { border-left: none; min-height: 44px; }
+  .shopping-input { font-size: 16px; min-height: 44px; }
+  .shopping-item { padding: 12px 0; }
+  .shopping-check { width: 28px; height: 28px; }
+  .shopping-item-name { font-size: 14px; }
+  .shopping-delete { width: 32px; height: 32px; min-width: 32px; }
+  .shopping-filters { gap: 4px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .shopping-filter { white-space: nowrap; min-height: 36px; padding: 8px 12px; }
+  .btn-manage-cats { min-height: 44px; padding: 10px 12px; font-size: 10px; }
+  .btn-clear-bought { min-height: 44px; padding: 10px 12px; font-size: 10px; }
+
+  /* Food database */
+  .fd-grid { grid-template-columns: 1fr; }
+  .fd-main { max-width: 100%; }
+  .fd-overlay { padding: 0; }
+  .fd-detail {
+    margin: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    border: none;
+  }
+  .fd-detail-header { padding: 12px; }
+  .fd-detail-close { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .fd-detail-body { padding: 0 16px 24px; }
+  .fd-edit-input { font-size: 16px; min-height: 44px; }
+  .fd-btn { min-height: 44px; padding: 10px 16px; }
+  .fd-detail-dropdown { left: 0; right: 0; min-width: auto; }
+
+  /* Habits */
+  .habit-card { padding: 14px 16px; }
+  .habit-form { padding: 16px; }
+  .habit-form-input { font-size: 16px; min-height: 44px; padding: 12px; }
+  .habit-form-select { font-size: 16px; min-height: 44px; }
+  .habit-form-label { min-width: auto; width: 100%; }
+  .habit-form-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .habit-schedule-btns { flex-wrap: wrap; gap: 4px; }
+  .habit-schedule-btn { margin-left: 0; }
+  .habit-day-btn { width: 44px; height: 44px; font-size: 11px; }
+  .habit-form-submit { min-height: 44px; flex: 1; }
+  .habit-form-cancel { min-height: 44px; flex: 1; }
+  .habit-form-actions { width: 100%; }
+  .habit-detail-overlay { padding: 0; }
+  .habit-detail {
+    margin: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    border: none;
+  }
+  .habit-detail-body { padding: 0 16px 24px; }
+  .habit-detail-close { width: 44px; height: 44px; }
+  .habit-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .habit-stat:nth-child(2) { border-right: none; }
+  .habit-action-btn { min-height: 44px; flex: 1; }
+  .habit-detail-actions { flex-wrap: wrap; }
+  .habit-filter-btn { padding: 10px 12px; }
+
+  /* Heatmap */
+  .heatmap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+
+  /* Goals */
+  .goals-grid { grid-template-columns: 1fr; }
+  .goal-card { padding: 16px; }
+  .goal-overlay { padding: 0; }
   .goal-detail {
     margin: 0;
     max-width: 100%;
+    min-height: 100vh;
+    border: none;
   }
-  .goal-link-actions {
-    flex-direction: column;
+  .goal-detail-body { padding: 0 16px 24px; }
+  .goal-detail-close { width: 44px; height: 44px; }
+  .goal-form { padding: 16px; }
+  .goal-form input,
+  .goal-form textarea,
+  .goal-form select {
+    font-size: 16px;
+    min-height: 44px;
   }
+  .goal-link-actions { flex-direction: column; }
+  .goal-link-actions button { min-height: 44px; width: 100%; }
+  .milestone-check { width: 28px; height: 28px; }
+  .milestone-name { font-size: 14px; }
+  .milestone-body { padding-left: 16px; }
+
+  /* DatePicker */
+  .datepicker-dropdown {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 80px;
+    min-width: auto;
+    z-index: 1000;
+  }
+  .datepicker-cell { width: auto; height: 44px; }
+  .datepicker-trigger { min-height: 44px; font-size: 16px; width: 100%; }
+
+  /* Filters (habit, goal) — full width touch */
+  .habit-filters { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .habit-filter-btn { white-space: nowrap; }
+  .goal-filters { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+
+  /* btn-add generic */
+  .btn-add { min-height: 44px; padding: 10px 16px; }
+
+  /* User menu */
+  .user-menu-trigger { min-height: 44px; min-width: 44px; }
+  .user-avatar { width: 36px; height: 36px; }
+  .user-dropdown { right: -8px; min-width: 200px; }
+  .user-dropdown-item { min-height: 44px; padding: 12px 16px; }
+
+  /* Linked items in goals */
+  .linked-item { padding: 10px 0; }
+  .linked-item-unlink { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+
+  /* Auth pages */
+  .auth-card { margin: 16px; padding: 24px 20px; max-width: 100%; }
+  .profile-card { margin: 16px; padding: 24px 20px; max-width: 100%; }
+}
+
+/* ── SMALL MOBILE (max 360px) ── */
+@media (max-width: 360px) {
+  .nav-tab { font-size: 8px; letter-spacing: 0.5px; padding: 10px 2px; }
+  .header-date { font-size: 32px; }
+  .section-title { font-size: 18px; letter-spacing: 3px; }
+  .habit-day-btn { width: 38px; height: 38px; }
+  .categories-grid > * { padding: 12px; }
+  .category-header { padding: 12px 16px 10px; }
 }
