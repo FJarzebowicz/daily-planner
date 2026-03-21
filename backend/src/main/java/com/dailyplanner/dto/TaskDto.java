@@ -14,19 +14,23 @@ public record TaskDto(
     @Min(0) int estimatedMinutes,
     @NotNull String priority,
     int sortOrder,
-    boolean completed
+    boolean completed,
+    Long goalId,
+    Long milestoneId
 ) {
     public static TaskDto from(Task task) {
         return new TaskDto(
             task.getId(),
-            task.getDay().getId(),
+            task.getDay() != null ? task.getDay().getId() : null,
             task.getCategory().getId(),
             task.getTitle(),
             task.getDescription(),
             task.getEstimatedMinutes(),
             task.getPriority().name(),
             task.getSortOrder(),
-            task.isCompleted()
+            task.isCompleted(),
+            task.getGoal() != null ? task.getGoal().getId() : null,
+            task.getMilestone() != null ? task.getMilestone().getId() : null
         );
     }
 }

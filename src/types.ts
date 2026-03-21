@@ -182,3 +182,67 @@ export interface DayData {
   sleepTime: string;
   closed: boolean;
 }
+
+// ── Goals ──
+
+export type GoalStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+
+export const GOAL_STATUS_LABELS: Record<GoalStatus, string> = {
+  ACTIVE: 'Aktywny',
+  COMPLETED: 'Ukończony',
+  ARCHIVED: 'Archiwum',
+};
+
+export interface Goal {
+  id: number;
+  name: string;
+  description: string;
+  rules: string | null;
+  deadline: string | null;
+  status: GoalStatus;
+  progress: number;
+  milestonesCount: number;
+  milestonesCompleted: number;
+  createdAt: string;
+}
+
+export interface GoalDetail extends Goal {
+  masterTask: GoalMasterTask | null;
+  milestones: Milestone[];
+}
+
+export interface GoalMasterTask {
+  id: number;
+  name: string;
+  description: string | null;
+  habits: LinkedHabit[];
+  tasks: LinkedTask[];
+}
+
+export interface Milestone {
+  id: number;
+  name: string;
+  description: string | null;
+  completed: boolean;
+  deadline: string | null;
+  sortOrder: number;
+  habits: LinkedHabit[];
+  tasks: LinkedTask[];
+}
+
+export interface LinkedHabit {
+  habitId: number;
+  name: string;
+  description: string | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+}
+
+export interface LinkedTask {
+  taskId: number;
+  title: string;
+  description: string | null;
+  categoryName: string | null;
+  completed: boolean;
+  estimatedMinutes: number;
+}

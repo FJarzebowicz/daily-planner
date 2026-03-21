@@ -402,6 +402,114 @@ export const habitApi = {
   getForDate: (date: string) => request<HabitForDateResponse[]>(`/habits/for-date/${date}`),
 };
 
+// ── Goals ──
+export interface GoalResponse {
+  id: number;
+  name: string;
+  description: string;
+  rules: string | null;
+  deadline: string | null;
+  status: string;
+  progress: number;
+  milestonesCount: number;
+  milestonesCompleted: number;
+  createdAt: string;
+}
+
+export interface LinkedHabitResponse {
+  habitId: number;
+  name: string;
+  description: string | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+}
+
+export interface LinkedTaskResponse {
+  taskId: number;
+  title: string;
+  description: string | null;
+  categoryName: string | null;
+  completed: boolean;
+  estimatedMinutes: number;
+}
+
+export interface GoalMasterTaskResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  habits: LinkedHabitResponse[];
+  tasks: LinkedTaskResponse[];
+}
+
+export interface MilestoneResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  completed: boolean;
+  deadline: string | null;
+  sortOrder: number;
+  habits: LinkedHabitResponse[];
+  tasks: LinkedTaskResponse[];
+}
+
+export interface GoalDetailResponse extends GoalResponse {
+  masterTask: GoalMasterTaskResponse | null;
+  milestones: MilestoneResponse[];
+}
+
+export const goalApi = {
+  getAll: (status?: string) =>
+    request<GoalResponse[]>(status ? `/goals?status=${status}` : '/goals'),
+  getById: (id: number) => request<GoalDetailResponse>(`/goals/${id}`),
+  create: (data: { name: string; description: string; rules?: string; deadline?: string }) =>
+    request<GoalResponse>('/goals', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { name: string; description: string; rules?: string; deadline?: string }) =>
+    request<GoalResponse>(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => request<void>(`/goals/${id}`, { method: 'DELETE' }),
+  updateStatus: (id: number, status: string) =>
+    request<GoalResponse>(`/goals/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+};
+
+export const goalMasterTaskApi = {
+  createOrUpdate: (goalId: number, data: { name: string; description?: string }) =>
+    request<GoalMasterTaskResponse>(`/goals/${goalId}/master-task`, { method: 'POST', body: JSON.stringify(data) }),
+  linkHabit: (goalId: number, habitId: number) =>
+    request<void>(`/goals/${goalId}/master-task/link-habit`, { method: 'POST', body: JSON.stringify({ habitId }) }),
+  linkTask: (goalId: number, taskId: number) =>
+    request<void>(`/goals/${goalId}/master-task/link-task`, { method: 'POST', body: JSON.stringify({ taskId }) }),
+  createHabit: (goalId: number, data: { name: string; description?: string; categoryId?: number | null; scheduleType: string; scheduleDays?: string; scheduleInterval?: number; startDate: string }) =>
+    request<LinkedHabitResponse>(`/goals/${goalId}/master-task/create-habit`, { method: 'POST', body: JSON.stringify(data) }),
+  createTask: (goalId: number, data: { title: string; description?: string; categoryId: number; estimatedMinutes: number; priority: string; date: string }) =>
+    request<LinkedTaskResponse>(`/goals/${goalId}/master-task/create-task`, { method: 'POST', body: JSON.stringify(data) }),
+  unlinkHabit: (goalId: number, habitId: number) =>
+    request<void>(`/goals/${goalId}/master-task/unlink-habit/${habitId}`, { method: 'DELETE' }),
+  unlinkTask: (goalId: number, taskId: number) =>
+    request<void>(`/goals/${goalId}/master-task/unlink-task/${taskId}`, { method: 'DELETE' }),
+};
+
+export const milestoneApi = {
+  create: (goalId: number, data: { name: string; description?: string; deadline?: string }) =>
+    request<MilestoneResponse>(`/goals/${goalId}/milestones`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (goalId: number, milestoneId: number, data: { name: string; description?: string; deadline?: string; sortOrder?: number }) =>
+    request<MilestoneResponse>(`/goals/${goalId}/milestones/${milestoneId}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (goalId: number, milestoneId: number) =>
+    request<void>(`/goals/${goalId}/milestones/${milestoneId}`, { method: 'DELETE' }),
+  toggleComplete: (goalId: number, milestoneId: number) =>
+    request<MilestoneResponse>(`/goals/${goalId}/milestones/${milestoneId}/complete`, { method: 'PUT' }),
+  linkHabit: (goalId: number, milestoneId: number, habitId: number) =>
+    request<void>(`/goals/${goalId}/milestones/${milestoneId}/link-habit`, { method: 'POST', body: JSON.stringify({ habitId }) }),
+  linkTask: (goalId: number, milestoneId: number, taskId: number) =>
+    request<void>(`/goals/${goalId}/milestones/${milestoneId}/link-task`, { method: 'POST', body: JSON.stringify({ taskId }) }),
+  createHabit: (goalId: number, milestoneId: number, data: { name: string; description?: string; categoryId?: number | null; scheduleType: string; scheduleDays?: string; scheduleInterval?: number; startDate: string }) =>
+    request<LinkedHabitResponse>(`/goals/${goalId}/milestones/${milestoneId}/create-habit`, { method: 'POST', body: JSON.stringify(data) }),
+  createTask: (goalId: number, milestoneId: number, data: { title: string; description?: string; categoryId: number; estimatedMinutes: number; priority: string; date: string }) =>
+    request<LinkedTaskResponse>(`/goals/${goalId}/milestones/${milestoneId}/create-task`, { method: 'POST', body: JSON.stringify(data) }),
+  unlinkHabit: (goalId: number, milestoneId: number, habitId: number) =>
+    request<void>(`/goals/${goalId}/milestones/${milestoneId}/unlink-habit/${habitId}`, { method: 'DELETE' }),
+  unlinkTask: (goalId: number, milestoneId: number, taskId: number) =>
+    request<void>(`/goals/${goalId}/milestones/${milestoneId}/unlink-task/${taskId}`, { method: 'DELETE' }),
+};
+
 // ── Backlog ──
 export interface BacklogTaskResponse {
   id: number;

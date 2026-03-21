@@ -16,6 +16,8 @@ public record HabitDto(
     String startDate,
     boolean active,
     Integer streakGoal,
+    Long goalId,
+    Long milestoneId,
     String createdAt
 ) {
     public static HabitDto from(Habit h) {
@@ -26,6 +28,8 @@ public record HabitDto(
             h.getCategory() != null ? h.getCategory().getColor() : null,
             h.getScheduleType().name(), h.getScheduleDays(), h.getScheduleInterval(),
             h.getStartDate().toString(), h.isActive(), h.getStreakGoal(),
+            h.getGoal() != null ? h.getGoal().getId() : null,
+            h.getMilestone() != null ? h.getMilestone().getId() : null,
             h.getCreatedAt().toString()
         );
     }
