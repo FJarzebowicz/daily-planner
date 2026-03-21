@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { shoppingApi, shoppingCategoryApi } from '../api';
 import type { ShoppingItem, ShoppingCategory } from '../types';
 import { NavTabs } from '../components/NavTabs';
-import { UserMenu } from '../components/UserMenu';
 
 function parseQuickAdd(input: string): { quantity: number; unit: string; name: string } {
   const match = input.match(/^(\d+)\s*x\s+(.+)$/i);
@@ -25,6 +24,7 @@ export function ShoppingPage() {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState('');
   const [showCatManager, setShowCatManager] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -42,9 +42,7 @@ export function ShoppingPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   function getSelectedCategoryName(): string {
     if (selectedCategoryId) {
@@ -68,37 +66,30 @@ export function ShoppingPage() {
       });
       setItems((prev) => [item as ShoppingItem, ...prev]);
       setInputValue('');
+      setShowAddForm(false);
       inputRef.current?.focus();
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   async function handleToggle(id: number) {
     try {
       const updated = await shoppingApi.toggle(id);
       setItems((prev) => prev.map((i) => (i.id === id ? (updated as ShoppingItem) : i)));
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   async function handleDelete(id: number) {
     try {
       await shoppingApi.delete(id);
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   async function handleClearBought() {
     try {
       await shoppingApi.deleteBought();
       setItems((prev) => prev.filter((i) => !i.bought));
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   async function handleAddCategory(e: React.FormEvent) {
@@ -108,9 +99,7 @@ export function ShoppingPage() {
       const cat = await shoppingCategoryApi.create({ name: newCatName.trim() });
       setCategories((prev) => [...prev, cat as ShoppingCategory]);
       setNewCatName('');
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   async function handleDeleteCategory(id: number) {
@@ -122,14 +111,11 @@ export function ShoppingPage() {
         const deleted = categories.find((c) => c.id === id);
         if (deleted && filterCategory === deleted.name) setFilterCategory(null);
       }
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   const boughtCount = items.filter((i) => i.bought).length;
   const totalCount = items.length;
-
   const filtered = filterCategory ? items.filter((i) => i.categoryName === filterCategory) : items;
   const unbought = filtered.filter((i) => !i.bought);
   const bought = filtered.filter((i) => i.bought);
@@ -141,38 +127,79 @@ export function ShoppingPage() {
     grouped.get(cat)!.push(item);
   }
 
-  if (loading) {
-    return <div className="app loading">Ladowanie...</div>;
-  }
+  if (loading) return <div className="app loading">Ladowanie...</div>;
 
   return (
     <div className="app shopping-app">
       <div className="page-header">
         <NavTabs />
-        <UserMenu />
       </div>
 
       <div className="section">
+        {/* Header row: title + add button */}
         <div className="section-header">
           <h1 className="section-title">ZAKUPY</h1>
-          <div className="page-actions">
-            <button
-              className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
-              onClick={() => setShowCatManager(!showCatManager)}
-            >
-              KATEGORIE
-            </button>
-            {boughtCount > 0 && (
-              <button className="btn-clear-bought" onClick={handleClearBought}>
-                USUN KUPIONE
-              </button>
-            )}
-          </div>
+          <button className="btn-add" onClick={() => setShowAddForm(!showAddForm)}>
+            {showAddForm ? 'ANULUJ' : '+ DODAJ'}
+          </button>
         </div>
 
-        <p className="section-count">{boughtCount}/{totalCount} Kupione</p>
+        {/* Add form — toggled */}
+        {showAddForm && (
+          <form className="shopping-add" onSubmit={handleAdd}>
+            <input
+              ref={inputRef}
+              className="shopping-input"
+              placeholder="Dodaj produkt... (np. 2x mleko)"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              autoFocus
+            />
+            <select
+              className="shopping-category-select"
+              value={selectedCategoryId ?? ''}
+              onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">Wybierz kategorie...</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+            <button type="submit" className="shopping-add-btn">DODAJ</button>
+          </form>
+        )}
 
-        {/* Category manager */}
+        {/* Filter row: scrollable chips + gear icon */}
+        <div className="filter-row">
+          <div className="shopping-filters">
+            <button
+              className={`shopping-filter ${filterCategory === null ? 'shopping-filter--active' : ''}`}
+              onClick={() => setFilterCategory(null)}
+            >
+              WSZYSTKO
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`shopping-filter ${filterCategory === cat.name ? 'shopping-filter--active' : ''}`}
+                onClick={() => setFilterCategory(filterCategory === cat.name ? null : cat.name)}
+              >
+                {cat.name.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button
+            className={`btn-settings ${showCatManager ? 'btn-settings--active' : ''}`}
+            onClick={() => setShowCatManager(!showCatManager)}
+            title="Zarządzaj kategoriami"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Category manager panel */}
         {showCatManager && (
           <div className="cat-manager">
             <form className="cat-manager-form" onSubmit={handleAddCategory}>
@@ -200,52 +227,14 @@ export function ShoppingPage() {
           </div>
         )}
 
-        {/* Add form */}
-        <form className="shopping-add" onSubmit={handleAdd}>
-          <input
-            ref={inputRef}
-            className="shopping-input"
-            placeholder="Dodaj produkt... (np. 2x mleko)"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
-          <select
-            className="shopping-category-select"
-            value={selectedCategoryId ?? ''}
-            onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">Wybierz kategorie...</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-          <button type="submit" className="shopping-add-btn">DODAJ</button>
-        </form>
+        {/* Stats */}
+        <p className="section-count" style={{ marginBottom: 24 }}>{boughtCount}/{totalCount} Kupione</p>
 
-        {/* Category filter */}
-        <div className="shopping-filters">
-          <button
-            className={`shopping-filter ${filterCategory === null ? 'shopping-filter--active' : ''}`}
-            onClick={() => setFilterCategory(null)}
-          >
-            WSZYSTKO
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              className={`shopping-filter ${filterCategory === cat.name ? 'shopping-filter--active' : ''}`}
-              onClick={() => setFilterCategory(filterCategory === cat.name ? null : cat.name)}
-            >
-              {cat.name.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
-        {/* Items */}
+        {/* List */}
         {totalCount === 0 ? (
           <div className="shopping-empty">
             <p className="shopping-empty-title">LISTA ZAKUPOW JEST PUSTA</p>
-            <p className="shopping-empty-sub">Dodaj produkty powyzej</p>
+            <p className="shopping-empty-sub">Kliknij + DODAJ powyzej</p>
           </div>
         ) : (
           <div className="shopping-list">
@@ -269,13 +258,15 @@ export function ShoppingPage() {
 
             {bought.length > 0 && (
               <div className="shopping-group shopping-group--bought">
-                <h3 className="shopping-group-title">KUPIONE</h3>
+                <h3 className="shopping-group-title">
+                  KUPIONE
+                  <button className="btn-clear-bought" style={{ marginLeft: 12 }} onClick={handleClearBought}>
+                    USUN
+                  </button>
+                </h3>
                 {bought.map((item) => (
                   <div key={item.id} className="shopping-item shopping-item--bought">
-                    <button
-                      className="shopping-check shopping-check--done"
-                      onClick={() => handleToggle(item.id)}
-                    >
+                    <button className="shopping-check shopping-check--done" onClick={() => handleToggle(item.id)}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     </button>
                     <span className="shopping-item-name">

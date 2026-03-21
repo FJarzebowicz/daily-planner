@@ -1814,6 +1814,40 @@
   background: var(--accent);
 }
 
+/* Filter row: filters + gear icon */
+.filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.filter-row .shopping-filters {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.btn-settings {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.btn-settings:hover,
+.btn-settings--active {
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
 /* Filters */
 .shopping-filters {
   display: flex;

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DayData, Task, MealSlot, Note } from '../types';
-import { UserMenu } from './UserMenu';
 import { NavTabs } from './NavTabs';
 import {
   getPolishDayName,
@@ -241,8 +240,6 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
                 <span className="day-closed-badge">Zamkniety</span>
               )}
             </div>
-
-            <UserMenu />
           </div>
         </div>
       </div>

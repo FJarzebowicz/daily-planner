@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { foodApi, foodCategoryApi, foodVariantApi } from '../api';
 import type { Food, FoodCategory, FoodVariant } from '../types';
 import { NavTabs } from '../components/NavTabs';
-import { UserMenu } from '../components/UserMenu';
 
 // ── Food Detail Modal ──
 function FoodDetail({
@@ -288,31 +287,64 @@ export function FoodDatabasePage() {
     <div className="app fd-app">
       <div className="page-header">
         <NavTabs />
-        <UserMenu />
       </div>
 
       <div className="section fd-section">
         <div className="section-header">
           <h1 className="section-title">JEDZENIE</h1>
-          <div className="page-actions">
-            <button
-              className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
-              onClick={() => setShowCatManager(!showCatManager)}
-            >
-              KATEGORIE
-            </button>
-            <button
-              className={`fd-btn fd-btn--primary ${showAddFood ? 'btn-manage-cats--active' : ''}`}
-              onClick={() => setShowAddFood(!showAddFood)}
-            >
-              {showAddFood ? 'ANULUJ' : 'DODAJ DANIE'}
-            </button>
-          </div>
+          <button
+            className="btn-add"
+            onClick={() => setShowAddFood(!showAddFood)}
+          >
+            {showAddFood ? 'ANULUJ' : '+ DODAJ DANIE'}
+          </button>
         </div>
 
-        <p className="section-count">{foods.length} przepisow</p>
+        {/* Add food form — toggled */}
+        {showAddFood && (
+          <form className="fd-add-form" onSubmit={handleAddFood}>
+            <input className="fd-edit-input" placeholder="Nazwa dania" value={newFood.name} onChange={(e) => setNewFood({ ...newFood, name: e.target.value })} autoFocus />
+            <input className="fd-edit-input" placeholder="Opis (opcjonalnie)" value={newFood.description} onChange={(e) => setNewFood({ ...newFood, description: e.target.value })} />
+            <input className="fd-edit-input" placeholder="Link do przepisu (opcjonalnie)" value={newFood.link} onChange={(e) => setNewFood({ ...newFood, link: e.target.value })} />
+            <select className="fd-edit-select" value={newFood.categoryId ?? ''} onChange={(e) => setNewFood({ ...newFood, categoryId: e.target.value ? Number(e.target.value) : null })}>
+              <option value="">Bez kategorii</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <button type="submit" className="fd-btn fd-btn--primary">DODAJ</button>
+          </form>
+        )}
 
-        {/* Category manager */}
+        {/* Filter row: scrollable chips + gear icon */}
+        <div className="filter-row">
+          <div className="shopping-filters">
+            <button
+              className={`shopping-filter ${filterCategoryId === null ? 'shopping-filter--active' : ''}`}
+              onClick={() => setFilterCategoryId(null)}
+            >
+              WSZYSTKO
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`shopping-filter ${filterCategoryId === cat.id ? 'shopping-filter--active' : ''}`}
+                onClick={() => setFilterCategoryId(filterCategoryId === cat.id ? null : cat.id)}
+              >
+                {cat.name.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button
+            className={`btn-settings ${showCatManager ? 'btn-settings--active' : ''}`}
+            onClick={() => setShowCatManager(!showCatManager)}
+            title="Zarządzaj kategoriami"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Category manager panel */}
         {showCatManager && (
           <div className="cat-manager">
             <form className="cat-manager-form" onSubmit={handleAddCategory}>
@@ -333,42 +365,14 @@ export function FoodDatabasePage() {
                   </button>
                 </div>
               ))}
+              {categories.length === 0 && (
+                <p className="cat-manager-empty">Brak kategorii — dodaj pierwsza powyzej</p>
+              )}
             </div>
           </div>
         )}
 
-        {/* Add food form */}
-        {showAddFood && (
-          <form className="fd-add-form" onSubmit={handleAddFood}>
-            <input className="fd-edit-input" placeholder="Nazwa dania" value={newFood.name} onChange={(e) => setNewFood({ ...newFood, name: e.target.value })} />
-            <input className="fd-edit-input" placeholder="Opis (opcjonalnie)" value={newFood.description} onChange={(e) => setNewFood({ ...newFood, description: e.target.value })} />
-            <input className="fd-edit-input" placeholder="Link do przepisu (opcjonalnie)" value={newFood.link} onChange={(e) => setNewFood({ ...newFood, link: e.target.value })} />
-            <select className="fd-edit-select" value={newFood.categoryId ?? ''} onChange={(e) => setNewFood({ ...newFood, categoryId: e.target.value ? Number(e.target.value) : null })}>
-              <option value="">Bez kategorii</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <button type="submit" className="fd-btn fd-btn--primary">DODAJ</button>
-          </form>
-        )}
-
-        {/* Category filter */}
-        <div className="shopping-filters">
-          <button
-            className={`shopping-filter ${filterCategoryId === null ? 'shopping-filter--active' : ''}`}
-            onClick={() => setFilterCategoryId(null)}
-          >
-            WSZYSTKO
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              className={`shopping-filter ${filterCategoryId === cat.id ? 'shopping-filter--active' : ''}`}
-              onClick={() => setFilterCategoryId(filterCategoryId === cat.id ? null : cat.id)}
-            >
-              {cat.name.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <p className="section-count" style={{ marginBottom: 24 }}>{foods.length} przepisow</p>
 
         {/* Food grid */}
         {foods.length === 0 ? (
