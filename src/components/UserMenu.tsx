@@ -19,13 +19,6 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const initials = user.displayName
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
   return (
     <div className="user-menu" ref={ref}>
       <motion.button
@@ -33,11 +26,14 @@ export function UserMenu() {
         onClick={() => setOpen(!open)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        aria-label="Menu użytkownika"
       >
         {user.avatarUrl ? (
           <img src={user.avatarUrl} alt="" className="user-avatar" />
         ) : (
-          <div className="user-avatar user-avatar--initials">{initials}</div>
+          <div className="user-avatar user-avatar--initials">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+          </div>
         )}
       </motion.button>
 

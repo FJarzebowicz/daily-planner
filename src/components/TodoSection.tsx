@@ -426,6 +426,7 @@ function SortableTask({
   onDelete,
   onMoveToBacklog,
   onMoveToPosition,
+  onStartWorking,
 }: {
   task: Task;
   orderNum: number;
@@ -435,6 +436,7 @@ function SortableTask({
   onDelete: () => void;
   onMoveToBacklog: () => void;
   onMoveToPosition: (newPos: number) => void;
+  onStartWorking?: () => void;
 }) {
   const [editingOrder, setEditingOrder] = useState(false);
   const [orderInput, setOrderInput] = useState('');
@@ -553,6 +555,17 @@ function SortableTask({
 
         {!closed && (
           <div className="tc-hover-actions">
+            {onStartWorking && !task.completed && (
+              <motion.button
+                className="tc-action tc-action--play"
+                onClick={onStartWorking}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                title="Rozpocznij"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+              </motion.button>
+            )}
             <motion.button
               className="tc-action"
               onClick={onMoveToBacklog}
@@ -645,6 +658,7 @@ function CategoryCard({
   onAddTask,
   habits,
   onToggleHabit,
+  onStartWorking,
 }: {
   category: Category;
   tasks: Task[];
@@ -658,6 +672,7 @@ function CategoryCard({
   onAddTask: (categoryId: number) => void;
   habits?: HabitForDate[];
   onToggleHabit?: (id: number, completed: boolean) => void;
+  onStartWorking?: (taskId: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -705,6 +720,7 @@ function CategoryCard({
                     const newIdx = Math.max(0, Math.min(newPos - 1, tasks.length - 1));
                     if (idx !== newIdx) onReorderTasks(category.id, idx, newIdx);
                   }}
+                  onStartWorking={onStartWorking ? () => onStartWorking(task.id) : undefined}
                 />
               ))}
             </AnimatePresence>
@@ -847,6 +863,7 @@ export function TodoSection({
               onAddTask={(catId) => setAddingTaskCat(catId)}
               habits={habitsByCategoryId.get(cat.id)}
               onToggleHabit={onToggleHabit}
+              onStartWorking={onSetCurrentTask}
             />
           ))}
         </AnimatePresence>

@@ -801,6 +801,14 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+.tc-action--play {
+  color: var(--done);
+  border-color: var(--done);
+}
+.tc-action--play:hover {
+  background: var(--done);
+  color: #fff;
+}
 
 .add-task-btn {
   display: flex;
@@ -1640,8 +1648,8 @@
 /* User menu */
 .user-menu { position: relative; }
 .user-menu-trigger { border: none; background: transparent; cursor: none; padding: 0; }
-.user-avatar { width: 28px; height: 28px; object-fit: cover; border: 1px solid #000; }
-.user-avatar--initials { display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-family: var(--font-display); font-size: 10px; font-weight: 900; }
+.user-avatar { width: 32px; height: 32px; object-fit: cover; border: 1px solid var(--border-strong); border-radius: 50%; }
+.user-avatar--initials { display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--text); border: 2px solid var(--border-strong); border-radius: 50%; }
 .user-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 240px; background: #fff; border: 1px solid #000; z-index: 100; overflow: hidden; }
 .user-dropdown-header { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
 .user-dropdown-name { font-weight: 700; font-size: 14px; }
@@ -3637,15 +3645,17 @@
 
 /* ── MOBILE (max 600px) ── */
 @media (max-width: 600px) {
-  /* App container */
-  .app { padding: 0 16px 100px; }
+  /* ── App container ── */
+  .app {
+    padding: 0 16px 80px;
+  }
   .header {
+    position: relative;
     margin: 0 -16px;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding: 0 16px;
   }
 
-  /* Nav tabs → bottom bar */
+  /* ── 1. Bottom navigation bar ── */
   .nav-tabs {
     position: fixed;
     bottom: 0;
@@ -3656,19 +3666,21 @@
     border-bottom: none;
     border-top: 1px solid var(--border-strong);
     margin: 0;
-    justify-content: space-around;
+    justify-content: stretch;
     padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   }
   .nav-tab {
-    padding: 12px 4px;
-    font-size: 9px;
+    padding: 10px 4px 8px;
+    font-size: 11px;
     letter-spacing: 1px;
-    flex: 1;
+    flex: 1 1 0;
     text-align: center;
     border-bottom: none;
     border-top: 2px solid transparent;
     margin: 0;
+    min-width: 0;
   }
   .nav-tab--active {
     border-bottom: none;
@@ -3678,28 +3690,14 @@
   .nav-tab-label-full { display: none; }
   .nav-tab-label-short { display: inline; }
 
-  /* Page header (non-planner pages) */
-  .page-header {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    min-height: 44px;
-    padding: 8px 0;
-  }
-
-  /* Header planner */
+  /* ── 2. Planner header — stacked layout ── */
   .header-top {
     flex-direction: column;
     gap: 8px;
     padding: 12px 0 10px;
   }
-  /* On non-planner pages, header-left only wraps NavTabs (now at bottom) — collapse it */
-  .shopping-app .header-left,
-  .fd-app .header-left {
-    display: none;
-  }
-  .header {
-    position: relative;
+  .header-left {
+    width: 100%;
   }
   .header-right {
     flex-direction: column;
@@ -3707,17 +3705,21 @@
     width: 100%;
     gap: 8px;
   }
-  .header-controls {
-    gap: 8px;
-    flex-wrap: wrap;
+  .stats-index {
+    font-size: 11px;
+    text-align: left;
+    white-space: normal;
     width: 100%;
   }
-  /* Planner-specific: stack times and close day vertically */
-  .app:not(.shopping-app):not(.fd-app) .header-controls {
+  .header-controls {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+    width: 100%;
   }
   .header-times {
+    display: flex;
     justify-content: flex-start;
     gap: 12px;
   }
@@ -3733,100 +3735,155 @@
   .day-closed-badge {
     display: block;
     text-align: center;
-  }
-  /* Shopping/Food header controls — row layout with wrapping */
-  .shopping-app .header-controls,
-  .fd-app .header-controls {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
+    width: 100%;
   }
   .header-date { font-size: clamp(36px, 10vw, 56px); }
   .header-day-name { font-size: clamp(10px, 2vw, 14px); }
   .header-nav { gap: 8px; }
   .nav-arrow { width: 44px; height: 44px; }
-  .stats-index {
-    font-size: 11px;
-    text-align: left;
-    white-space: normal;
-    width: 100%;
-  }
+
+  /* ── 3. User menu avatar — always top-right ── */
   .user-menu {
     position: absolute;
-    top: 12px;
+    top: 8px;
     right: 16px;
+    z-index: 10;
+  }
+  .user-menu-trigger {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+  .user-avatar--initials {
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .user-dropdown {
+    right: 0;
+    min-width: 200px;
+  }
+  .user-dropdown-item {
+    min-height: 44px;
+    padding: 12px 16px;
   }
 
-  /* Section padding */
+  /* ── 4. Non-planner page headers ── */
+  /* Pages like Shopping/Food: header-left only wraps NavTabs (now at bottom) */
+  .shopping-app .header-left,
+  .fd-app .header-left {
+    display: none;
+  }
+  .shopping-app .header-controls,
+  .fd-app .header-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  /* Habits/Goals page-header (NavTabs + UserMenu) */
+  .page-header {
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 44px;
+    padding: 8px 0;
+  }
+
+  /* ── 5. Section padding ── */
   .section { padding: clamp(16px, 4vw, 32px); }
   .section-title { font-size: 20px; letter-spacing: 4px; }
   .section-header { margin-bottom: 20px; }
 
-  /* Task cards — touch targets */
-  .tc-check {
-    width: 28px;
-    height: 28px;
-  }
+  /* ── 6. Task cards — touch targets ── */
+  .tc-check { width: 28px; height: 28px; }
   .tc-top { gap: 8px; }
   .tc-bottom { min-height: 32px; }
   .tc-pill { font-size: 9px; padding: 3px 8px; }
-  .tc-action { width: 32px; height: 32px; }
+  .tc-action { width: 36px; height: 36px; }
+  .tc-hover-actions { opacity: 1; pointer-events: auto; gap: 4px; }
+  .tc-drag { display: none; }
   .add-task-btn { padding: 14px 16px; min-height: 44px; }
   .btn-add-category { min-height: 44px; padding: 10px 16px; }
-  .btn-icon-sm { width: 32px; height: 32px; }
+  .btn-icon-sm { width: 36px; height: 36px; }
   .category-actions { gap: 8px; }
 
-  /* Backlog tab — inline on mobile instead of fixed side tab */
+  /* ── 7. Backlog — inline button on mobile, not floating side tab ── */
   .backlog-tab {
     position: static !important;
     transform: none !important;
     writing-mode: horizontal-tb;
     text-orientation: initial;
     border: 1px solid #000;
-    border-right: 1px solid #000;
     padding: 12px 16px;
     width: 100%;
     min-height: 44px;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .backlog-tab-text {
     writing-mode: horizontal-tb;
+    display: flex;
     flex-direction: row;
+    align-items: center;
+    gap: 8px;
   }
+  .backlog-sidebar { width: 100%; max-width: 100%; }
 
-  /* Currently working box */
+  /* ── 8. Currently Working box — hide empty drag prompt on mobile ── */
   .cw-box { padding: 16px; }
+  .cw-empty { display: none; }
+  .cw-box:not(.cw-box--active) { display: none; }
   .cw-btn { padding: 10px 16px; min-height: 44px; }
 
-  /* Meals — touch targets */
+  /* ── 9. Meals — touch targets ── */
   .meal-card { padding: 16px; }
   .toggle { min-width: 44px; min-height: 28px; }
   .meal-input { font-size: 16px; padding: 8px 0; min-height: 44px; }
 
-  /* Notes */
+  /* ── 10. Notes ── */
   .note-textarea { font-size: 16px; min-height: 44px; }
   .btn-add-note { min-height: 44px; padding: 10px 16px; }
 
-  /* Events */
+  /* ── 11. Events ── */
   .btn-add-event { min-height: 44px; padding: 10px 16px; }
   .btn-add-event-confirm { min-height: 44px; }
   .etp-btn { min-height: 44px; min-width: 60px; font-size: 14px; }
   .etp-option { min-height: 36px; padding: 8px 12px; }
 
-  /* Modals — near full-screen on mobile */
-  .modal-overlay { padding: 8px; }
+  /* ── 12. Modals — bottom sheet style ── */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
   .modal {
-    padding: 32px 20px 24px;
+    padding: 24px 20px 32px;
     max-width: 100%;
+    width: 100%;
     max-height: 90vh;
     overflow-y: auto;
+    border: none;
+    border-top: 1px solid var(--border-strong);
+    border-radius: 12px 12px 0 0;
+    margin: 0;
   }
   .modal-title { font-size: 22px; margin-bottom: 24px; }
   .modal-close { width: 44px; height: 44px; top: 8px; right: 8px; }
   .btn-modal { min-height: 44px; padding: 12px 20px; }
 
-  /* Shopping — full width */
-  .shopping-main { max-width: 100%; }
+  /* ── 13. Shopping — full width, scrollable filters ── */
+  .shopping-main { max-width: 100%; padding: 0; }
   .shopping-add {
     flex-direction: column;
     border: none;
@@ -3845,15 +3902,24 @@
   .shopping-check { width: 28px; height: 28px; }
   .shopping-item-name { font-size: 14px; }
   .shopping-delete { width: 32px; height: 32px; min-width: 32px; }
-  .shopping-filters { gap: 4px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
-  .shopping-filter { white-space: nowrap; min-height: 36px; padding: 8px 12px; }
+  .shopping-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .shopping-filters::-webkit-scrollbar { display: none; }
+  .shopping-filter { white-space: nowrap; min-height: 36px; padding: 8px 12px; flex-shrink: 0; }
   .btn-manage-cats { min-height: 44px; padding: 10px 12px; font-size: 10px; }
   .btn-clear-bought { min-height: 44px; padding: 10px 12px; font-size: 10px; }
 
-  /* Food database */
+  /* ── 14. Food database — scrollable filters ── */
   .fd-grid { grid-template-columns: 1fr; }
-  .fd-main { max-width: 100%; }
-  .fd-overlay { padding: 0; }
+  .fd-main { max-width: 100%; padding: 0; }
+  .fd-overlay { padding: 0; align-items: flex-end; }
   .fd-detail {
     margin: 0;
     max-width: 100%;
@@ -3867,7 +3933,7 @@
   .fd-btn { min-height: 44px; padding: 10px 16px; }
   .fd-detail-dropdown { left: 0; right: 0; min-width: auto; }
 
-  /* Habits */
+  /* ── 15. Habits ── */
   .habit-card { padding: 14px 16px; }
   .habit-form { padding: 16px; }
   .habit-form-input { font-size: 16px; min-height: 44px; padding: 12px; }
@@ -3884,7 +3950,7 @@
   .habit-form-submit { min-height: 44px; flex: 1; }
   .habit-form-cancel { min-height: 44px; flex: 1; }
   .habit-form-actions { width: 100%; }
-  .habit-detail-overlay { padding: 0; }
+  .habit-detail-overlay { padding: 0; align-items: flex-end; }
   .habit-detail {
     margin: 0;
     max-width: 100%;
@@ -3898,14 +3964,12 @@
   .habit-action-btn { min-height: 44px; flex: 1; }
   .habit-detail-actions { flex-wrap: wrap; }
   .habit-filter-btn { padding: 10px 12px; }
-
-  /* Heatmap */
   .heatmap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
 
-  /* Goals */
+  /* ── 16. Goals ── */
   .goals-grid { grid-template-columns: 1fr; }
   .goal-card { padding: 16px; }
-  .goal-overlay { padding: 0; }
+  .goal-overlay { padding: 0; align-items: flex-end; }
   .goal-detail {
     margin: 0;
     max-width: 100%;
@@ -3927,7 +3991,7 @@
   .milestone-name { font-size: 14px; }
   .milestone-body { padding-left: 16px; }
 
-  /* DatePicker */
+  /* ── 17. DatePicker ── */
   .datepicker-dropdown {
     position: fixed;
     left: 16px;
@@ -3940,32 +4004,47 @@
   .datepicker-cell { width: auto; height: 44px; }
   .datepicker-trigger { min-height: 44px; font-size: 16px; width: 100%; }
 
-  /* Filters (habit, goal) — full width touch */
-  .habit-filters { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
-  .habit-filter-btn { white-space: nowrap; }
-  .goal-filters { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  /* ── 18. Filters (habit, goal) — scrollable ── */
+  .habit-filters {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .habit-filters::-webkit-scrollbar { display: none; }
+  .habit-filter-btn { white-space: nowrap; flex-shrink: 0; }
+  .goal-filters {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .goal-filters::-webkit-scrollbar { display: none; }
 
-  /* btn-add generic */
+  /* ── 19. btn-add generic ── */
   .btn-add { min-height: 44px; padding: 10px 16px; }
 
-  /* User menu */
-  .user-menu-trigger { min-height: 44px; min-width: 44px; }
-  .user-avatar { width: 36px; height: 36px; }
-  .user-dropdown { right: -8px; min-width: 200px; }
-  .user-dropdown-item { min-height: 44px; padding: 12px 16px; }
-
-  /* Linked items in goals */
+  /* ── 20. Linked items in goals ── */
   .linked-item { padding: 10px 0; }
   .linked-item-unlink { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
 
-  /* Auth pages */
+  /* ── 21. Auth pages ── */
   .auth-card { margin: 16px; padding: 24px 20px; max-width: 100%; }
   .profile-card { margin: 16px; padding: 24px 20px; max-width: 100%; }
+
+  /* ── 22. Category manager (Shopping/Food) ── */
+  .cat-manager { padding: 16px 0; }
+  .cat-manager-form { flex-wrap: wrap; }
+  .cat-manager-input { font-size: 16px; min-height: 44px; }
+  .cat-manager-add { min-height: 44px; }
+  .cat-manager-delete { min-width: 36px; min-height: 36px; }
 }
 
 /* ── SMALL MOBILE (max 360px) ── */
 @media (max-width: 360px) {
-  .nav-tab { font-size: 8px; letter-spacing: 0.5px; padding: 10px 2px; }
+  .nav-tab { font-size: 10px; letter-spacing: 0.5px; padding: 10px 2px; }
   .header-date { font-size: 32px; }
   .section-title { font-size: 18px; letter-spacing: 3px; }
   .habit-day-btn { width: 38px; height: 38px; }
