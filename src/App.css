@@ -1741,6 +1741,10 @@
   border-bottom-color: var(--accent);
 }
 
+/* Nav tab labels — desktop shows full, mobile shows short */
+.nav-tab-label-full { display: inline; }
+.nav-tab-label-short { display: none; }
+
 /* ===== SHOPPING PAGE ===== */
 .shopping-app {
   padding-bottom: 80px;
@@ -3670,14 +3674,17 @@
     border-bottom: none;
     border-top-color: var(--accent);
   }
+  /* Show short labels on mobile bottom nav */
+  .nav-tab-label-full { display: none; }
+  .nav-tab-label-short { display: inline; }
 
   /* Page header (non-planner pages) */
   .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .page-header .nav-tabs {
-    /* Already fixed to bottom, hide from flow in header */
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 44px;
+    padding: 8px 0;
   }
 
   /* Header planner */
@@ -3686,26 +3693,69 @@
     gap: 8px;
     padding: 12px 0 10px;
   }
-  .header-left .nav-tabs {
-    /* Hidden from inline, shown at bottom */
+  /* On non-planner pages, header-left only wraps NavTabs (now at bottom) — collapse it */
+  .shopping-app .header-left,
+  .fd-app .header-left {
+    display: none;
+  }
+  .header {
+    position: relative;
   }
   .header-right {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     width: 100%;
-    gap: 6px;
+    gap: 8px;
   }
   .header-controls {
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     width: 100%;
+  }
+  /* Planner-specific: stack times and close day vertically */
+  .app:not(.shopping-app):not(.fd-app) .header-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .header-times {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .header-close {
+    width: 100%;
+  }
+  .btn-close-day {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 11px;
+    text-align: center;
+  }
+  .day-closed-badge {
+    display: block;
+    text-align: center;
+  }
+  /* Shopping/Food header controls — row layout with wrapping */
+  .shopping-app .header-controls,
+  .fd-app .header-controls {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
   }
   .header-date { font-size: clamp(36px, 10vw, 56px); }
   .header-day-name { font-size: clamp(10px, 2vw, 14px); }
   .header-nav { gap: 8px; }
   .nav-arrow { width: 44px; height: 44px; }
-  .btn-close-day { padding: 12px 20px; font-size: 11px; }
+  .stats-index {
+    font-size: 11px;
+    text-align: left;
+    white-space: normal;
+    width: 100%;
+  }
+  .user-menu {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+  }
 
   /* Section padding */
   .section { padding: clamp(16px, 4vw, 32px); }
@@ -3724,6 +3774,25 @@
   .add-task-btn { padding: 14px 16px; min-height: 44px; }
   .btn-add-category { min-height: 44px; padding: 10px 16px; }
   .btn-icon-sm { width: 32px; height: 32px; }
+  .category-actions { gap: 8px; }
+
+  /* Backlog tab — inline on mobile instead of fixed side tab */
+  .backlog-tab {
+    position: static !important;
+    transform: none !important;
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+    border: 1px solid #000;
+    border-right: 1px solid #000;
+    padding: 12px 16px;
+    width: 100%;
+    min-height: 44px;
+    margin-bottom: 12px;
+  }
+  .backlog-tab-text {
+    writing-mode: horizontal-tb;
+    flex-direction: row;
+  }
 
   /* Currently working box */
   .cw-box { padding: 16px; }
