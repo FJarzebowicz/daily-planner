@@ -130,12 +130,10 @@ export function ShoppingPage() {
   const boughtCount = items.filter((i) => i.bought).length;
   const totalCount = items.length;
 
-  // Group by category
   const filtered = filterCategory ? items.filter((i) => i.categoryName === filterCategory) : items;
   const unbought = filtered.filter((i) => !i.bought);
   const bought = filtered.filter((i) => i.bought);
 
-  // Group unbought by category
   const grouped = new Map<string, ShoppingItem[]>();
   for (const item of unbought) {
     const cat = item.categoryName || 'Inne';
@@ -149,34 +147,31 @@ export function ShoppingPage() {
 
   return (
     <div className="app shopping-app">
-      <header className="header">
-        <div className="header-top">
-          <div className="header-left">
-            <NavTabs />
-          </div>
-          <div className="header-right">
-            <div className="stats-index">
-              <strong>{boughtCount}/{totalCount}</strong> Kupione
-            </div>
-            <div className="header-controls">
-              <button
-                className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
-                onClick={() => setShowCatManager(!showCatManager)}
-              >
-                KATEGORIE
+      <div className="page-header">
+        <NavTabs />
+        <UserMenu />
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <h1 className="section-title">ZAKUPY</h1>
+          <div className="page-actions">
+            <button
+              className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
+              onClick={() => setShowCatManager(!showCatManager)}
+            >
+              KATEGORIE
+            </button>
+            {boughtCount > 0 && (
+              <button className="btn-clear-bought" onClick={handleClearBought}>
+                USUN KUPIONE
               </button>
-              {boughtCount > 0 && (
-                <button className="btn-clear-bought" onClick={handleClearBought}>
-                  USUN KUPIONE
-                </button>
-              )}
-              <UserMenu />
-            </div>
+            )}
           </div>
         </div>
-      </header>
 
-      <main className="main shopping-main">
+        <p className="section-count">{boughtCount}/{totalCount} Kupione</p>
+
         {/* Category manager */}
         {showCatManager && (
           <div className="cat-manager">
@@ -254,16 +249,12 @@ export function ShoppingPage() {
           </div>
         ) : (
           <div className="shopping-list">
-            {/* Unbought grouped by category */}
             {Array.from(grouped.entries()).map(([category, catItems]) => (
               <div key={category} className="shopping-group">
                 <h3 className="shopping-group-title">{category.toUpperCase()}</h3>
                 {catItems.map((item) => (
                   <div key={item.id} className="shopping-item">
-                    <button
-                      className="shopping-check"
-                      onClick={() => handleToggle(item.id)}
-                    />
+                    <button className="shopping-check" onClick={() => handleToggle(item.id)} />
                     <span className="shopping-item-name">
                       {item.quantity > 1 && <span className="shopping-qty">{item.quantity}{item.unit} </span>}
                       {item.name}
@@ -276,7 +267,6 @@ export function ShoppingPage() {
               </div>
             ))}
 
-            {/* Bought items */}
             {bought.length > 0 && (
               <div className="shopping-group shopping-group--bought">
                 <h3 className="shopping-group-title">KUPIONE</h3>
@@ -301,7 +291,7 @@ export function ShoppingPage() {
             )}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

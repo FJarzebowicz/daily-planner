@@ -286,35 +286,32 @@ export function FoodDatabasePage() {
 
   return (
     <div className="app fd-app">
-      <header className="header">
-        <div className="header-top">
-          <div className="header-left">
-            <NavTabs />
-          </div>
-          <div className="header-right">
-            <div className="stats-index">
-              <strong>{foods.length}</strong> Przepisow
-            </div>
-            <div className="header-controls">
-              <button
-                className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
-                onClick={() => setShowCatManager(!showCatManager)}
-              >
-                KATEGORIE
-              </button>
-              <button
-                className={`fd-btn fd-btn--primary ${showAddFood ? 'btn-manage-cats--active' : ''}`}
-                onClick={() => setShowAddFood(!showAddFood)}
-              >
-                {showAddFood ? 'ANULUJ' : 'DODAJ DANIE'}
-              </button>
-              <UserMenu />
-            </div>
+      <div className="page-header">
+        <NavTabs />
+        <UserMenu />
+      </div>
+
+      <div className="section fd-section">
+        <div className="section-header">
+          <h1 className="section-title">JEDZENIE</h1>
+          <div className="page-actions">
+            <button
+              className={`btn-manage-cats ${showCatManager ? 'btn-manage-cats--active' : ''}`}
+              onClick={() => setShowCatManager(!showCatManager)}
+            >
+              KATEGORIE
+            </button>
+            <button
+              className={`fd-btn fd-btn--primary ${showAddFood ? 'btn-manage-cats--active' : ''}`}
+              onClick={() => setShowAddFood(!showAddFood)}
+            >
+              {showAddFood ? 'ANULUJ' : 'DODAJ DANIE'}
+            </button>
           </div>
         </div>
-      </header>
 
-      <main className="main fd-main">
+        <p className="section-count">{foods.length} przepisow</p>
+
         {/* Category manager */}
         {showCatManager && (
           <div className="cat-manager">
@@ -408,7 +405,7 @@ export function FoodDatabasePage() {
             onDelete={handleFoodDelete}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 }

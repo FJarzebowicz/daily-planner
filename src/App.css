@@ -2073,6 +2073,7 @@
 /* ===== FOOD DATABASE PAGE ===== */
 .fd-app { padding-bottom: 80px; }
 .fd-main { max-width: 1000px; }
+.fd-section { max-width: 1000px; }
 
 /* Add food form */
 .fd-add-form {
@@ -3601,6 +3602,19 @@
   margin-bottom: 8px;
 }
 
+/* ── Page actions (button group in section-header) ── */
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Profile tab in NavTabs — hidden on desktop, shown in mobile bottom nav ── */
+.nav-tab-profile {
+  display: none;
+}
+
 /* ── TABLET (max 768px) ── */
 @media (max-width: 768px) {
   /* Header */
@@ -3692,15 +3706,43 @@
   .nav-tab-label-full { display: none; }
   .nav-tab-label-short { display: inline; }
 
-  /* ── 2. Planner header — stacked layout ── */
+  /* ── 2. Planner header — centered nav layout ── */
   .header-top {
     flex-direction: column;
     gap: 8px;
     padding: 12px 0 10px;
   }
+  /* ← SOBOTA → centered row */
   .header-left {
     width: 100%;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: visible;
+  }
+  .header-date-block {
+    flex: 1;
+    text-align: center;
+  }
+  .header-date-btn {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+  .header-day-name {
+    font-size: clamp(28px, 9vw, 48px);
+    text-align: center;
+    letter-spacing: -1px;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .header-date-text {
+    text-align: center;
+    align-self: center;
+    margin-bottom: 0;
+    font-size: 11px;
+    letter-spacing: 3px;
   }
   .header-right {
     flex-direction: column;
@@ -3726,9 +3768,7 @@
     justify-content: flex-start;
     gap: 12px;
   }
-  .header-close {
-    width: 100%;
-  }
+  .header-close { width: 100%; }
   .btn-close-day {
     width: 100%;
     padding: 12px 20px;
@@ -3740,85 +3780,21 @@
     text-align: center;
     width: 100%;
   }
-  /* Planner day name: scale to fit within 375px */
-  .header-day-name {
-    font-size: clamp(36px, 12vw, 72px);
-    letter-spacing: -2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .header-date-btn {
-    flex-wrap: wrap;
-    gap: 4px 12px;
-  }
-  .header-date-text {
-    font-size: 11px;
-    letter-spacing: 3px;
-  }
   .header-date { font-size: clamp(36px, 10vw, 56px); }
   .header-nav { gap: 8px; }
   .nav-arrow { width: 44px; height: 44px; }
 
-  /* ── 3. User menu avatar — always top-right ── */
-  .user-menu {
-    position: absolute;
-    top: 8px;
-    right: 16px;
-    z-index: 10;
-  }
-  .user-menu-trigger {
-    min-height: 44px;
-    min-width: 44px;
+  /* ── 3. User menu — hidden on mobile (profile accessible via NavTabs) ── */
+  .user-menu { display: none; }
+
+  /* ── 4. Profile tab — visible in mobile bottom nav ── */
+  .nav-tab-profile {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .user-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-  .user-avatar--initials {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--border-strong);
-    background: var(--bg);
-    color: var(--text);
-  }
-  .user-dropdown {
-    right: 0;
-    min-width: 200px;
-  }
-  .user-dropdown-item {
-    min-height: 44px;
-    padding: 12px 16px;
-  }
 
-  /* ── 4. Non-planner page headers ── */
-  /* Shopping/Food pages: hide the header-left (NavTabs already at bottom) */
-  .shopping-app .header-left,
-  .fd-app .header-left {
-    display: none;
-  }
-  /* Shopping/Food: header-right should be full width, row layout for buttons */
-  .shopping-app .header-right,
-  .fd-app .header-right {
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    gap: 8px;
-    padding-right: 52px; /* space for avatar */
-  }
-  .shopping-app .header-controls,
-  .fd-app .header-controls {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-  /* Habits/Goals page-header (NavTabs + UserMenu) */
+  /* ── 4b. page-header spacer on mobile ── */
   .page-header {
     position: relative;
     flex-direction: row;
@@ -3913,8 +3889,7 @@
   .modal-close { width: 44px; height: 44px; top: 8px; right: 8px; }
   .btn-modal { min-height: 44px; padding: 12px 20px; }
 
-  /* ── 13. Shopping — full width, proper padding, scrollable filters ── */
-  .shopping-main { max-width: 100%; padding: 0 16px; }
+  /* ── 13. Shopping — scrollable filters, touch targets ── */
   .shopping-add {
     flex-direction: column;
     border: none;
@@ -3947,9 +3922,8 @@
   .btn-manage-cats { min-height: 44px; padding: 10px 12px; font-size: 10px; }
   .btn-clear-bought { min-height: 44px; padding: 10px 12px; font-size: 10px; }
 
-  /* ── 14. Food database — proper padding, scrollable filters ── */
+  /* ── 14. Food database — scrollable filters ── */
   .fd-grid { grid-template-columns: 1fr; }
-  .fd-main { max-width: 100%; padding: 0 16px; }
   .fd-overlay { padding: 0; align-items: flex-end; }
   .fd-detail {
     margin: 0;
