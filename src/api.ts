@@ -174,7 +174,7 @@ export interface SwapResponse {
 
 export const taskApi = {
   getByDay: (date: string) => request<TaskResponse[]>(`/days/${date}/tasks`),
-  create: (date: string, data: Omit<TaskResponse, 'id' | 'dayId' | 'sortOrder' | 'completed'>) =>
+  create: (date: string, data: Omit<TaskResponse, 'id' | 'dayId' | 'sortOrder' | 'completed' | 'globalOrder'>) =>
     request<TaskResponse>(`/days/${date}/tasks`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<TaskResponse>) =>
     request<TaskResponse>(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
