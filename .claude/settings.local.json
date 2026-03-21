@@ -8,7 +8,24 @@
       "Bash(npx tsc:*)",
       "Bash(npm install:*)",
       "Bash(npx vite:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git:*)",
+      "Bash(npx --yes @railway/cli --version)",
+      "Bash(railway status:*)",
+      "Bash(where railway:*)",
+      "Bash(cmd.exe /c \"where railway\")",
+      "Read(//c/Users/Franek/AppData/Roaming/npm/**)",
+      "Bash(grep -c \"nav-tab-label-short\" /c/projects/daily-planner/dist/assets/*.css)",
+      "Bash(grep -c \"cw-empty\" /c/projects/daily-planner/dist/assets/*.css)",
+      "Bash(grep -c \"backlog-tab\" /c/projects/daily-planner/dist/assets/*.css)",
+      "Bash(grep -c \"position:static\" /c/projects/daily-planner/dist/assets/*.css)",
+      "Bash(grep \"JEDZENIE\" /c/projects/daily-planner/dist/assets/*.js)",
+      "Bash(grep -o 'max-width:600px' /c/projects/daily-planner/dist/assets/*.css)",
+      "Bash(grep -oP '@media\\\\\\([^\\)]+\\\\\\)' /c/projects/daily-planner/dist/assets/*.css)",
+      "Bash(xargs grep:*)",
+      "Bash(npx --yes svg2png-cli /c/projects/daily-planner/public/favicon.svg --width 192 --height 192 --output /c/projects/daily-planner/public/icon-192.png)",
+      "Bash(npx --yes sharp-cli -i public/favicon.svg -o public/icon-192.png resize 192 192)",
+      "Bash(npx sharp-cli:*)"
     ]
   }
 }
