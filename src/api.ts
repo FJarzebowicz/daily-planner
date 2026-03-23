@@ -154,35 +154,57 @@ export const categoryApi = {
 };
 
 // ── Task ──
+
+/** Odpowiedź API dla pojedynczego taska. Odzwierciedla encję Task z backendu. */
 export interface TaskResponse {
   id: number;
   dayId: number;
   categoryId: number;
   title: string;
   description: string;
+  /** Szacowany czas w minutach */
   estimatedMinutes: number;
+  /** LOW | MEDIUM | HIGH */
   priority: string;
+  /** Kolejność w obrębie kategorii (0-based) */
   sortOrder: number;
   completed: boolean;
+  /** Globalny numer "currently working" (1-based), null jeśli nieprzypisany */
   globalOrder: number | null;
+  /**
+   * Opcjonalne powiązanie z celem tygodniowym.
+   * null = task nie jest przypisany do żadnego WeeklyGoal.
+   */
   weeklyGoalId: number | null;
 }
 
+/** Odpowiedź po przestawieniu globalnego numeru porządkowego —
+ *  zwraca zaktualizowany task oraz ewentualnie wyparty task. */
 export interface SwapResponse {
   updated: TaskResponse;
+  /** Task który stracił swój globalOrder po zamianie, lub null */
   displaced: TaskResponse | null;
 }
 
 export const taskApi = {
+  /** Pobiera wszystkie taski dla danego dnia (YYYY-MM-DD) */
   getByDay: (date: string) => request<TaskResponse[]>(`/days/${date}/tasks`),
+  /** Tworzy nowy task dla danego dnia. weeklyGoalId może być null. */
   create: (date: string, data: Omit<TaskResponse, 'id' | 'dayId' | 'sortOrder' | 'completed' | 'globalOrder'>) =>
     request<TaskResponse>(`/days/${date}/tasks`, { method: 'POST', body: JSON.stringify(data) }),
+  /** Aktualizuje dowolne pola taska (partial update) */
   update: (id: number, data: Partial<TaskResponse>) =>
     request<TaskResponse>(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  /** Przełącza completed ↔ !completed */
   toggle: (id: number) => request<TaskResponse>(`/tasks/${id}/toggle`, { method: 'PATCH' }),
   delete: (id: number) => request<void>(`/tasks/${id}`, { method: 'DELETE' }),
+  /** Nadpisuje kolejność tasków w kategorii na podstawie tablicy ID */
   reorder: (taskIds: number[]) =>
     request<void>('/tasks/reorder', { method: 'PATCH', body: JSON.stringify({ taskIds }) }),
+  /**
+   * Ustawia globalny numer porządkowy taska ("currently working #N").
+   * Jeśli numer jest już zajęty, backend przesuwa kolidujący task — stąd SwapResponse.
+   */
   setGlobalOrder: (id: number, globalOrder: number | null) =>
     request<SwapResponse>(`/tasks/${id}/global-order`, { method: 'PATCH', body: JSON.stringify({ globalOrder }) }),
 };
@@ -530,25 +552,64 @@ export interface BacklogTaskResponse {
 }
 
 // ── Weekly Goals ──
+//
+// WeeklyGoal to "odcinek tygodniowy" długoterminowego celu.
+// Jeden rekord istnieje per (goalId + weekStart).
+// Backend: GET/POST/PUT/DELETE /api/weekly-goals
+//
+// Wymagane endpointy po stronie Spring Boot:
+//   GET    /api/weekly-goals?weekStart=YYYY-MM-DD  → lista na dany tydzień
+//   POST   /api/weekly-goals                       → utwórz
+//   PUT    /api/weekly-goals/{id}                  → aktualizuj opis i achieved
+//   PATCH  /api/weekly-goals/{id}/toggle-achieved  → przełącz achieved
+//   DELETE /api/weekly-goals/{id}                  → usuń
+
+/** Odpowiedź API dla celu tygodniowego */
 export interface WeeklyGoalResponse {
   id: number;
+  /** ID powiązanego długoterminowego celu */
   goalId: number;
+  /** Nazwa celu (denormalizowana) */
   goalName: string;
+  /** Data poniedziałku tygodnia — YYYY-MM-DD */
   weekStart: string;
+  /** Opis zamierzeń na ten tydzień */
   description: string;
+  /** Czy użytkownik ocenił tydzień jako sukces dla tego celu */
   achieved: boolean;
   createdAt: string;
 }
 
 export const weeklyGoalApi = {
+  /**
+   * Pobiera wszystkie cele tygodniowe dla danego tygodnia.
+   * @param weekStart data poniedziałku w formacie YYYY-MM-DD
+   */
   getByWeek: (weekStart: string) =>
     request<WeeklyGoalResponse[]>(`/weekly-goals?weekStart=${weekStart}`),
+
+  /**
+   * Tworzy nowy cel tygodniowy dla danego celu i tygodnia.
+   * Opis jest wymagany — nie tworzymy pustych rekordów.
+   */
   create: (data: { goalId: number; weekStart: string; description: string }) =>
     request<WeeklyGoalResponse>('/weekly-goals', { method: 'POST', body: JSON.stringify(data) }),
+
+  /**
+   * Aktualizuje opis i/lub status achieved celu tygodniowego.
+   * Wywołuj po blur textarea lub po zmianie achieved.
+   */
   update: (id: number, data: { description: string; achieved: boolean }) =>
     request<WeeklyGoalResponse>(`/weekly-goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  /**
+   * Przełącza achieved ↔ !achieved bez konieczności podawania opisu.
+   * Odpowiednik "odhaczenia" celu tygodniowego.
+   */
   toggleAchieved: (id: number) =>
     request<WeeklyGoalResponse>(`/weekly-goals/${id}/toggle-achieved`, { method: 'PATCH' }),
+
+  /** Usuwa cel tygodniowy. Wywoływany gdy opis zostanie wyczyszczony lub użytkownik kliknie ×. */
   delete: (id: number) => request<void>(`/weekly-goals/${id}`, { method: 'DELETE' }),
 };
 

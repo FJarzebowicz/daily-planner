@@ -108,6 +108,22 @@ export function FloatingInput({
 
 /* ── Task Modal (add + edit) ── */
 
+/**
+ * Modal tworzenia i edycji taska.
+ *
+ * Pola:
+ *  - Nazwa (wymagana)
+ *  - Opis (opcjonalny, multiline)
+ *  - Kategoria (jeśli przekazano categories)
+ *  - Data (jeśli przekazano defaultDate — np. w Backlogu)
+ *  - Czas szacowany (presety + pole custom)
+ *  - Priorytet (LOW / MEDIUM / HIGH)
+ *  - Cel tygodniowy (opcjonalny — widoczny jeśli istnieją WeeklyGoale w tym tygodniu)
+ *
+ * Cel tygodniowy jest ładowany automatycznie przy montowaniu modala
+ * na podstawie defaultDate (lub daty dzisiejszej). Selector pojawia się
+ * tylko gdy użytkownik ma zdefiniowane cele na bieżący tydzień.
+ */
 export function TaskModal({
   categoryId,
   categories,
@@ -116,11 +132,27 @@ export function TaskModal({
   onSubmit,
   onClose,
 }: {
+  /** Jeśli podane, task jest przypisany do tej kategorii (bez selectora kategorii) */
   categoryId?: number;
+  /** Lista kategorii do wyboru (wyświetla selector jeśli podana) */
   categories?: Category[];
+  /**
+   * Domyślna data taska w formacie YYYY-MM-DD.
+   * Jeśli podana — wyświetla się pole daty i wyznacza weekStart dla WeeklyGoal selectora.
+   */
   defaultDate?: string;
+  /** Wypełnia formularz danymi istniejącego taska (tryb edycji) */
   initial?: Task;
-  onSubmit: (data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string; date?: string; weeklyGoalId?: number | null }) => void;
+  onSubmit: (data: {
+    title: string;
+    description: string;
+    categoryId: number;
+    estimatedMinutes: number;
+    priority: string;
+    date?: string;
+    /** null = brak powiązania z celem tygodniowym */
+    weeklyGoalId?: number | null;
+  }) => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState(initial?.title ?? '');
@@ -132,18 +164,25 @@ export function TaskModal({
     categoryId ?? categories?.[0]?.id ?? 0,
   );
   const [date, setDate] = useState(defaultDate ?? formatDate(new Date()));
+
+  // Lista WeeklyGoali dostępnych w tym tygodniu — ładowana asynchronicznie
   const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
+  // Aktualnie wybrany cel tygodniowy (null = brak)
   const [selectedWeeklyGoalId, setSelectedWeeklyGoalId] = useState<number | null>(
     initial?.weeklyGoalId ?? null,
   );
   const isEdit = !!initial;
 
+  /**
+   * Przy montowaniu modala ładujemy cele tygodniowe dla bieżącego tygodnia.
+   * Błąd jest cicho pomijany — brak celów tygodniowych nie blokuje tworzenia taska.
+   */
   useEffect(() => {
     const effectiveDate = defaultDate ?? formatDate(new Date());
     const weekStart = getWeekStart(effectiveDate);
     weeklyGoalApi.getByWeek(weekStart)
       .then((goals) => setWeeklyGoals(goals as WeeklyGoal[]))
-      .catch(() => {});
+      .catch(() => {/* brak celów tygodniowych — nie pokazujemy selectora */});
   }, [defaultDate]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -155,6 +194,7 @@ export function TaskModal({
       categoryId: categoryId ?? selectedCategoryId,
       estimatedMinutes,
       priority,
+      // Dołącz datę tylko jeśli modal obsługuje wybór daty
       ...(defaultDate !== undefined ? { date } : {}),
       weeklyGoalId: selectedWeeklyGoalId,
     });
@@ -249,11 +289,18 @@ export function TaskModal({
           ))}
         </div>
 
+        {/*
+          Selector celu tygodniowego — widoczny tylko gdy użytkownik
+          ma zdefiniowane WeeklyGoale na bieżący tydzień.
+          Pozwala przypiąć task do konkretnego celu tygodniowego,
+          co widoczne jest później w historii postępów na WeeklyPage.
+        */}
         {weeklyGoals.length > 0 && (
           <>
             <div className="modal-spacer" />
             <label className="modal-label">Cel tygodniowy (opcjonalnie)</label>
             <div className="priority-picker" style={{ flexWrap: 'wrap', gap: '6px' }}>
+              {/* Opcja "Brak" — odpina task od celu tygodniowego */}
               <button
                 type="button"
                 className={`priority-btn ${selectedWeeklyGoalId === null ? 'priority-btn--active' : ''}`}
@@ -261,6 +308,7 @@ export function TaskModal({
               >
                 Brak
               </button>
+              {/* Jeden przycisk per cel tygodniowy — tooltip pokazuje opis */}
               {weeklyGoals.map((wg) => (
                 <button
                   key={wg.id}

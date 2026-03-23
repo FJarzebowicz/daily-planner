@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent, HabitForDate } from './types';
-import { formatDate } from './utils';
+import { formatDate, getWeekStart } from './utils';
 import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi, habitApi } from './api';
 import {
   DndContext,
@@ -21,6 +21,10 @@ import { MealsSection } from './components/MealsSection';
 import { NotesSection } from './components/NotesSection';
 import { EventsSection } from './components/EventsSection';
 import { Backlog } from './components/Backlog';
+import { NavTabs } from './components/NavTabs';
+import { UserMenu } from './components/UserMenu';
+import { WeekStrip } from './components/WeekStrip';
+import { WeeklyGoalsSidebar } from './components/WeeklyGoalsSidebar';
 import './App.css';
 
 /* Custom collision detection: prioritize special drop zones, fall back to closestCenter for tasks */
@@ -33,8 +37,25 @@ function customCollisionDetection(args: Parameters<typeof closestCenter>[0]) {
   return closestCenter(args);
 }
 
+/**
+ * Główny komponent aplikacji — widok dzienny plannera.
+ *
+ * Zarządza stanem całego dnia: tasks, meals, notes, events, habits, backlog.
+ * Obsługuje DnD (drag-and-drop) tasków między kategoriami i do backlogu.
+ *
+ * Nawigacja między dniami odbywa się przez:
+ *  - strzałki w Header (poprzedni/następny dzień)
+ *  - picker daty w Header
+ *  - URL query param ?date=YYYY-MM-DD (używany przez WeeklyPage przy kliknięciu dnia)
+ */
 function App() {
   const todayStr = formatDate(new Date());
+
+  /**
+   * Obsługa URL query param ?date=YYYY-MM-DD.
+   * Pozwala WeeklyPage nawigować do konkretnego dnia przez link.
+   * Jeśli param nieobecny — domyślnie dzisiaj.
+   */
   const [searchParams] = useSearchParams();
   const initialDate = searchParams.get('date') || todayStr;
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -47,9 +68,13 @@ function App() {
   const [backlog, setBacklog] = useState<BacklogTask[]>([]);
   const [habits, setHabits] = useState<HabitForDate[]>([]);
   const [backlogOpen, setBacklogOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [allDone, setAllDone] = useState(false);
   const slideDir = useRef(0);
+
+  /** weekStart dla WeekStrip i WeeklyGoalsSidebar — aktualizuje się przy zmianie dnia */
+  const weekStart = getWeekStart(currentDate);
 
   // Swap toast
   const [swapToast, setSwapToast] = useState<{ title: string; newOrder: number | null } | null>(null);
@@ -157,6 +182,12 @@ function App() {
   }
 
   // ── Task CRUD ──
+
+  /**
+   * Tworzy nowy task dla bieżącego dnia.
+   * weeklyGoalId jest opcjonalne — normalizujemy undefined → null
+   * przed wysłaniem do API (backend oczekuje number | null, nie undefined).
+   */
   async function addTask(data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string; weeklyGoalId?: number | null }) {
     const task = await taskApi.create(currentDate, { ...data, weeklyGoalId: data.weeklyGoalId ?? null });
     setTasks((prev) => [...prev, task]);
@@ -386,6 +417,20 @@ function App() {
 
   return (
     <div className="app">
+      {/* Górna nawigacja — spójna z innymi stronami */}
+      <div className="app-topbar">
+        <NavTabs />
+        <UserMenu />
+      </div>
+
+      {/* Pasek tygodnia — zawsze widoczny, nawigacja między dniami */}
+      <WeekStrip
+        currentDate={currentDate}
+        onNavigate={navigateToDate}
+        goalsOpen={goalsOpen}
+        onToggleGoals={() => setGoalsOpen((v) => !v)}
+      />
+
       {/* All done confetti easter egg */}
       <AnimatePresence>
         {allDone && (
@@ -498,6 +543,13 @@ function App() {
             )}
           </motion.main>
         </AnimatePresence>
+
+        {/* Sidebar celów tygodniowych */}
+        <WeeklyGoalsSidebar
+          open={goalsOpen}
+          onClose={() => setGoalsOpen(false)}
+          weekStart={weekStart}
+        />
 
         <Backlog
           open={backlogOpen}

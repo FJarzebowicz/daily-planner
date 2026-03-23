@@ -32,16 +32,31 @@ export function formatPolishDate(date: Date): string {
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-/** Zwraca datę poniedziałku tygodnia dla podanej daty (YYYY-MM-DD) */
+/**
+ * Zwraca datę poniedziałku tygodnia dla podanej daty.
+ *
+ * Przykład: "2026-03-25" (środa) → "2026-03-23" (poniedziałek)
+ *
+ * @param dateStr data w formacie YYYY-MM-DD
+ * @returns data poniedziałku w formacie YYYY-MM-DD
+ */
 export function getWeekStart(dateStr: string): string {
   const d = parseLocalDate(dateStr);
   const dow = d.getDay(); // 0=Nd, 1=Pon, ..., 6=Sob
+  // Niedziela (0) cofa o 6 dni, pozostałe dni cofają do poniedziałku
   const diff = dow === 0 ? -6 : 1 - dow;
   d.setDate(d.getDate() + diff);
   return formatDate(d);
 }
 
-/** Zwraca datę niedzieli tygodnia dla podanej daty (YYYY-MM-DD) */
+/**
+ * Zwraca datę niedzieli tygodnia dla podanej daty.
+ *
+ * Przykład: "2026-03-25" (środa) → "2026-03-29" (niedziela)
+ *
+ * @param dateStr data w formacie YYYY-MM-DD
+ * @returns data niedzieli w formacie YYYY-MM-DD
+ */
 export function getWeekEnd(dateStr: string): string {
   const start = parseLocalDate(getWeekStart(dateStr));
   start.setDate(start.getDate() + 6);

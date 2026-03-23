@@ -37,17 +37,36 @@ export interface Category {
   sortOrder: number;
 }
 
+/**
+ * Pojedynczy task przypisany do konkretnego dnia.
+ * Tasks są grupowane per kategoria i mogą być opcjonalnie
+ * powiązane z celem tygodniowym (weeklyGoalId).
+ */
 export interface Task {
   id: number;
+  /** ID dnia (Day), do którego należy task */
   dayId: number;
+  /** ID kategorii — wpływa na kolor i grupowanie */
   categoryId: number;
   title: string;
   description: string;
+  /** Szacowany czas wykonania w minutach */
   estimatedMinutes: number;
+  /** Priorytet: LOW | MEDIUM | HIGH */
   priority: string;
+  /** Kolejność w obrębie kategorii (0-based) */
   sortOrder: number;
   completed: boolean;
+  /**
+   * Globalny numer porządkowy "currently working" (1-based).
+   * null = task nie ma przypisanego numeru globalnego.
+   */
   globalOrder: number | null;
+  /**
+   * Opcjonalne powiązanie z celem tygodniowym.
+   * null = task nie jest przypisany do żadnego celu tygodniowego.
+   * @see WeeklyGoal
+   */
   weeklyGoalId: number | null;
 }
 
@@ -187,12 +206,29 @@ export interface DayData {
 
 // ── Weekly Goals ──
 
+/**
+ * Cel tygodniowy — opisuje co użytkownik chce osiągnąć
+ * w danym tygodniu w ramach konkretnego długoterminowego celu (Goal).
+ *
+ * Hierarchia: Goal → WeeklyGoal → Task (przez weeklyGoalId)
+ *
+ * Jeden WeeklyGoal istnieje per (goalId + weekStart).
+ * Tydzień zawsze zaczyna się od poniedziałku.
+ */
 export interface WeeklyGoal {
   id: number;
+  /** ID powiązanego długoterminowego celu (Goal) */
   goalId: number;
+  /** Nazwa celu — denormalizowana dla wygody wyświetlania */
   goalName: string;
-  weekStart: string; // YYYY-MM-DD (poniedziałek)
+  /**
+   * Data poniedziałku tygodnia w formacie YYYY-MM-DD.
+   * Identyfikuje tydzień razem z goalId.
+   */
+  weekStart: string;
+  /** Opis tego co użytkownik planuje zrobić w tym tygodniu */
   description: string;
+  /** Czy użytkownik ocenił że przybliżył się do celu w tym tygodniu */
   achieved: boolean;
   createdAt: string;
 }
