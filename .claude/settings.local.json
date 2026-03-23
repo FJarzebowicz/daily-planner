@@ -29,7 +29,8 @@
       "Bash(grep -E \"\\\\.\\(tsx?|json\\)$\")",
       "Bash(./node_modules/.bin/tsc --noEmit 2>&1)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(sudo npm:*)"
+      "Bash(sudo npm:*)",
+      "Bash(./mvnw compile:*)"
     ]
   }
 }

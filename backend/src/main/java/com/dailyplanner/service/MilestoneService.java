@@ -22,6 +22,7 @@ public class MilestoneService {
     private final CategoryRepository categoryRepository;
     private final HabitCompletionRepository habitCompletionRepository;
     private final GoalService goalService;
+    private final DayService dayService;
 
     public MilestoneService(GoalRepository goalRepository,
                             MilestoneRepository milestoneRepository,
@@ -31,7 +32,8 @@ public class MilestoneService {
                             TaskRepository taskRepository,
                             CategoryRepository categoryRepository,
                             HabitCompletionRepository habitCompletionRepository,
-                            GoalService goalService) {
+                            GoalService goalService,
+                            DayService dayService) {
         this.goalRepository = goalRepository;
         this.milestoneRepository = milestoneRepository;
         this.milestoneHabitRepository = milestoneHabitRepository;
@@ -41,6 +43,7 @@ public class MilestoneService {
         this.categoryRepository = categoryRepository;
         this.habitCompletionRepository = habitCompletionRepository;
         this.goalService = goalService;
+        this.dayService = dayService;
     }
 
     @Transactional
@@ -184,7 +187,11 @@ public class MilestoneService {
         Category category = categoryRepository.findByIdAndUserId(dto.categoryId(), userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + dto.categoryId()));
 
+        LocalDate taskDate = dto.date() != null ? LocalDate.parse(dto.date()) : LocalDate.now();
+        Day day = dayService.getOrCreateDay(taskDate);
+
         Task task = new Task();
+        task.setDay(day);
         task.setTitle(dto.title());
         task.setDescription(dto.description() != null ? dto.description() : "");
         task.setCategory(category);

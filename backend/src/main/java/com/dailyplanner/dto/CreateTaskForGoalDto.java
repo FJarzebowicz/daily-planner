@@ -8,5 +8,6 @@ public record CreateTaskForGoalDto(
     String description,
     @NotNull Long categoryId,
     int estimatedMinutes,
-    String priority
+    String priority,
+    String date
 ) {}

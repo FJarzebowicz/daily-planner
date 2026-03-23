@@ -21,6 +21,7 @@ public class GoalMasterTaskService {
     private final TaskRepository taskRepository;
     private final CategoryRepository categoryRepository;
     private final HabitCompletionRepository habitCompletionRepository;
+    private final DayService dayService;
 
     public GoalMasterTaskService(GoalRepository goalRepository,
                                   GoalMasterTaskRepository masterTaskRepository,
@@ -29,7 +30,8 @@ public class GoalMasterTaskService {
                                   HabitRepository habitRepository,
                                   TaskRepository taskRepository,
                                   CategoryRepository categoryRepository,
-                                  HabitCompletionRepository habitCompletionRepository) {
+                                  HabitCompletionRepository habitCompletionRepository,
+                                  DayService dayService) {
         this.goalRepository = goalRepository;
         this.masterTaskRepository = masterTaskRepository;
         this.masterTaskHabitRepository = masterTaskHabitRepository;
@@ -38,6 +40,7 @@ public class GoalMasterTaskService {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
         this.habitCompletionRepository = habitCompletionRepository;
+        this.dayService = dayService;
     }
 
     @Transactional
@@ -141,7 +144,11 @@ public class GoalMasterTaskService {
         Category category = categoryRepository.findByIdAndUserId(dto.categoryId(), userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + dto.categoryId()));
 
+        LocalDate taskDate = dto.date() != null ? LocalDate.parse(dto.date()) : LocalDate.now();
+        Day day = dayService.getOrCreateDay(taskDate);
+
         Task task = new Task();
+        task.setDay(day);
         task.setTitle(dto.title());
         task.setDescription(dto.description() != null ? dto.description() : "");
         task.setCategory(category);
