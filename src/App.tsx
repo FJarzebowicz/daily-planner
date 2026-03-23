@@ -158,7 +158,7 @@ function App() {
 
   // ── Task CRUD ──
   async function addTask(data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string; weeklyGoalId?: number | null }) {
-    const task = await taskApi.create(currentDate, data);
+    const task = await taskApi.create(currentDate, { ...data, weeklyGoalId: data.weeklyGoalId ?? null });
     setTasks((prev) => [...prev, task]);
   }
 
