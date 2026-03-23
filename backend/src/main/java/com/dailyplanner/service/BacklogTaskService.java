@@ -59,7 +59,7 @@ public class BacklogTaskService {
 
         TaskDto taskDto = new TaskDto(
             null, null, categoryId, bt.getName(), bt.getDescription(),
-            bt.getEstimatedMinutes(), bt.getPriority().name(), 0, false, null, null, null
+            bt.getEstimatedMinutes(), bt.getPriority().name(), 0, false, null, null, null, null
         );
         TaskDto created = taskService.create(java.time.LocalDate.parse(date), taskDto);
         repository.delete(bt);
