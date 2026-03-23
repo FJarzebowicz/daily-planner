@@ -1,15 +1,14 @@
 /**
  * WeekStrip — kompaktowy pasek 7 dni tygodnia zawsze widoczny w plannerze.
  *
- * Umieszczony między NavTabs a głównym Headerem dnia.
+ * Umieszczony między NavTabs a Headerem dnia.
  * Pozwala szybko przeskakiwać między dniami tygodnia bez opuszczania plannera.
  *
  * Wyświetla:
  *  - Skrócona nazwa dnia + numer
  *  - Cienki pasek postępu tasków (ładowany asynchronicznie per dzień)
  *  - Wyróżnienie dnia dzisiejszego i aktualnie wybranego dnia
- *  - Przycisk "CELE" do toggle'owania sidebara celów tygodniowych
- *  - Strzałki do poprzedniego/następnego tygodnia (jeśli currentDate jest poza bieżącym tygodniem)
+ *  - Strzałki do poprzedniego/następnego tygodnia
  */
 
 import { useState, useEffect } from 'react';
@@ -24,17 +23,13 @@ interface Props {
   currentDate: string;
   /** Nawiguje do innego dnia w plannerze */
   onNavigate: (date: string) => void;
-  /** Czy sidebar celów tygodniowych jest otwarty */
-  goalsOpen: boolean;
-  /** Toggle sidebara celów tygodniowych */
-  onToggleGoals: () => void;
 }
 
-export function WeekStrip({ currentDate, onNavigate, goalsOpen, onToggleGoals }: Props) {
+export function WeekStrip({ currentDate, onNavigate }: Props) {
   const todayStr = formatDate(new Date());
 
   /**
-   * weekStart śledzi tydzień aktualnie wyświetlany w stripie.
+   * stripWeekStart śledzi tydzień aktualnie wyświetlany w stripie.
    * Domyślnie = tydzień currentDate. Użytkownik może nawigować
    * do innych tygodni bez zmiany currentDate w plannerze.
    */
@@ -106,7 +101,7 @@ export function WeekStrip({ currentDate, onNavigate, goalsOpen, onToggleGoals }:
             >
               <span className="week-strip-day-name">{dayName}</span>
               <span className="week-strip-day-num">{dayNum}</span>
-              {/* Mini pasek postępu */}
+              {/* Mini pasek postępu tasków */}
               {hasProgress && (
                 <div className="week-strip-bar">
                   <div
@@ -128,16 +123,6 @@ export function WeekStrip({ currentDate, onNavigate, goalsOpen, onToggleGoals }:
         title="Następny tydzień"
       >
         ›
-      </button>
-
-      {/* Toggle sidebara celów tygodniowych */}
-      <button
-        className={`week-strip-goals-btn${goalsOpen ? ' week-strip-goals-btn--active' : ''}`}
-        type="button"
-        onClick={onToggleGoals}
-        title="Cele tygodniowe"
-      >
-        CELE
       </button>
     </div>
   );

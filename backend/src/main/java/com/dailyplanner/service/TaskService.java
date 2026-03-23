@@ -9,6 +9,8 @@ import com.dailyplanner.exception.DayClosedException;
 import com.dailyplanner.exception.ResourceNotFoundException;
 import com.dailyplanner.repository.CategoryRepository;
 import com.dailyplanner.repository.TaskRepository;
+import com.dailyplanner.repository.WeeklyGoalRepository;
+import com.dailyplanner.security.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,11 +23,14 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final CategoryRepository categoryRepository;
     private final DayService dayService;
+    private final WeeklyGoalRepository weeklyGoalRepository;
 
-    public TaskService(TaskRepository taskRepository, CategoryRepository categoryRepository, DayService dayService) {
+    public TaskService(TaskRepository taskRepository, CategoryRepository categoryRepository,
+                       DayService dayService, WeeklyGoalRepository weeklyGoalRepository) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
         this.dayService = dayService;
+        this.weeklyGoalRepository = weeklyGoalRepository;
     }
 
     public List<TaskDto> getByDay(LocalDate date) {
@@ -70,6 +75,28 @@ public class TaskService {
             Category cat = categoryRepository.findById(dto.categoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + dto.categoryId()));
             task.setCategory(cat);
+        }
+
+        return TaskDto.from(taskRepository.save(task));
+    }
+
+    /**
+     * Przypisuje lub odpina cel tygodniowy od taska.
+     *
+     * @param weeklyGoalId ID celu tygodniowego, lub null żeby odpiąć
+     */
+    @Transactional
+    public TaskDto assignWeeklyGoal(Long taskId, Long weeklyGoalId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        if (weeklyGoalId == null) {
+            task.setWeeklyGoal(null);
+        } else {
+            WeeklyGoal wg = weeklyGoalRepository.findByIdAndUserId(weeklyGoalId, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("WeeklyGoal not found: " + weeklyGoalId));
+            task.setWeeklyGoal(wg);
         }
 
         return TaskDto.from(taskRepository.save(task));

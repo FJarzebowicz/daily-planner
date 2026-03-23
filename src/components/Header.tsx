@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DayData, Task, MealSlot, Note } from '../types';
-import { NavTabs } from './NavTabs';
 import {
   getPolishDayName,
   formatPolishDate,
@@ -146,7 +145,6 @@ export function Header({ day, tasks, meals, notes, currentDate, onUpdateWakeUp, 
 
   return (
     <header className="header">
-      <NavTabs />
       <div className="header-top">
         {/* Left: nav arrows + day name + date */}
         <div className="header-left">

@@ -17,7 +17,9 @@ public record TaskDto(
     boolean completed,
     Long goalId,
     Long milestoneId,
-    Integer globalOrder
+    Integer globalOrder,
+    /** Opcjonalne powiązanie z celem tygodniowym; null = brak powiązania */
+    Long weeklyGoalId
 ) {
     public static TaskDto from(Task task) {
         return new TaskDto(
@@ -32,7 +34,8 @@ public record TaskDto(
             task.isCompleted(),
             task.getGoal() != null ? task.getGoal().getId() : null,
             task.getMilestone() != null ? task.getMilestone().getId() : null,
-            task.getGlobalOrder()
+            task.getGlobalOrder(),
+            task.getWeeklyGoal() != null ? task.getWeeklyGoal().getId() : null
         );
     }
 }

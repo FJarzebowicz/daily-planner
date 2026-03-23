@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent, HabitForDate } from './types';
+import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent, HabitForDate, WeeklyGoal } from './types';
 import { formatDate, getWeekStart } from './utils';
-import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi, habitApi } from './api';
+import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi, habitApi, weeklyGoalApi } from './api';
 import {
   DndContext,
   closestCenter,
@@ -68,13 +68,20 @@ function App() {
   const [backlog, setBacklog] = useState<BacklogTask[]>([]);
   const [habits, setHabits] = useState<HabitForDate[]>([]);
   const [backlogOpen, setBacklogOpen] = useState(false);
-  const [goalsOpen, setGoalsOpen] = useState(false);
+  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [allDone, setAllDone] = useState(false);
   const slideDir = useRef(0);
 
   /** weekStart dla WeekStrip i WeeklyGoalsSidebar — aktualizuje się przy zmianie dnia */
   const weekStart = getWeekStart(currentDate);
+
+  /** Ładuje cele tygodniowe dla bieżącego tygodnia — potrzebne do linkowania tasków */
+  useEffect(() => {
+    weeklyGoalApi.getByWeek(weekStart)
+      .then((wgs) => setWeeklyGoals(wgs as WeeklyGoal[]))
+      .catch(() => setWeeklyGoals([]));
+  }, [weekStart]);
 
   // Swap toast
   const [swapToast, setSwapToast] = useState<{ title: string; newOrder: number | null } | null>(null);
@@ -209,6 +216,23 @@ function App() {
   async function deleteTask(id: number) {
     await taskApi.delete(id);
     setTasks((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  /**
+   * Przypisuje lub odpina cel tygodniowy od taska.
+   * weeklyGoalId === null → odpiął
+   */
+  async function updateTaskWeeklyGoal(taskId: number, weeklyGoalId: number | null) {
+    // Optimistic update
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, weeklyGoalId } : t)));
+    try {
+      await taskApi.assignWeeklyGoal(taskId, weeklyGoalId);
+    } catch (err) {
+      // Revert on failure
+      const task = tasks.find((t) => t.id === taskId);
+      if (task) setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, weeklyGoalId: task.weeklyGoalId } : t)));
+      console.error('Failed to update task weeklyGoalId:', err);
+    }
   }
 
   async function reorderTasks(categoryId: number, oldIndex: number, newIndex: number) {
@@ -423,12 +447,10 @@ function App() {
         <UserMenu />
       </div>
 
-      {/* Pasek tygodnia — zawsze widoczny, nawigacja między dniami */}
+      {/* Pasek tygodnia — nawigacja między dniami bez CELE toggle */}
       <WeekStrip
         currentDate={currentDate}
         onNavigate={navigateToDate}
-        goalsOpen={goalsOpen}
-        onToggleGoals={() => setGoalsOpen((v) => !v)}
       />
 
       {/* All done confetti easter egg */}
@@ -482,97 +504,103 @@ function App() {
         )}
       </AnimatePresence>
 
-      <Header
-        day={day!}
-        tasks={tasks}
-        meals={meals}
-        notes={notes}
-        currentDate={currentDate}
-        onUpdateWakeUp={updateWakeUp}
-        onUpdateSleep={updateSleep}
-        onCloseDay={closeDay}
-        onNavigate={navigateToDate}
-      />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={customCollisionDetection}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.main
-            key={currentDate}
-            className="main"
-            initial={{ opacity: 0, x: slideDir.current * 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: slideDir.current * -24 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+      {/* Dwukolumnowy layout: main (treść dnia) + panel celów tygodniowych */}
+      <div className="app-body">
+        {/* Lewa kolumna — dzienny planner */}
+        <div className="app-main-col">
+          <Header
+            day={day!}
+            tasks={tasks}
+            meals={meals}
+            notes={notes}
+            currentDate={currentDate}
+            onUpdateWakeUp={updateWakeUp}
+            onUpdateSleep={updateSleep}
+            onCloseDay={closeDay}
+            onNavigate={navigateToDate}
+          />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={customCollisionDetection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
           >
-            {day && (
-              <>
-                <TodoSection
-                  tasks={tasks}
-                  categories={categories}
-                  closed={day.closed}
-                  onToggleTask={toggleTask}
-                  onDeleteTask={deleteTask}
-                  onAddTask={addTask}
-                  onReorderTasks={reorderTasks}
-                  onMoveToBacklog={moveTaskToBacklog}
-                  onAddCategory={addCategory}
-                  onEditCategory={editCategory}
-                  onDeleteCategory={deleteCategory}
-                  currentTaskId={currentTaskId}
-                  onSetCurrentTask={setCurrentTaskId}
-                  isOverCW={isOverCW}
-                  habits={habits}
-                  onToggleHabit={toggleHabit}
-                  onSetGlobalOrder={setGlobalOrder}
-                />
-                <div className="grid-bottom">
-                  <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
-                  <div className="grid-bottom-right">
-                    <NotesSection notes={notes} closed={day.closed} onAddNote={addNote} onDeleteNote={deleteNote} />
-                    <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} onCopyFromPreviousDay={copyEventsFromPreviousDay} />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.main
+                key={currentDate}
+                className="main"
+                initial={{ opacity: 0, x: slideDir.current * 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: slideDir.current * -24 }}
+                transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              >
+                {day && (
+                  <>
+                    <TodoSection
+                      tasks={tasks}
+                      categories={categories}
+                      closed={day.closed}
+                      onToggleTask={toggleTask}
+                      onDeleteTask={deleteTask}
+                      onAddTask={addTask}
+                      onReorderTasks={reorderTasks}
+                      onMoveToBacklog={moveTaskToBacklog}
+                      onAddCategory={addCategory}
+                      onEditCategory={editCategory}
+                      onDeleteCategory={deleteCategory}
+                      currentTaskId={currentTaskId}
+                      onSetCurrentTask={setCurrentTaskId}
+                      isOverCW={isOverCW}
+                      habits={habits}
+                      onToggleHabit={toggleHabit}
+                      onSetGlobalOrder={setGlobalOrder}
+                      weeklyGoals={weeklyGoals}
+                      onLinkGoal={updateTaskWeeklyGoal}
+                    />
+                    <div className="grid-bottom">
+                      <MealsSection meals={meals} closed={day.closed} onUpdateMeal={updateMeal} />
+                      <div className="grid-bottom-right">
+                        <NotesSection notes={notes} closed={day.closed} onAddNote={addNote} onDeleteNote={deleteNote} />
+                        <EventsSection events={recurringEvents} closed={day.closed} onAddEvent={addEvent} onDeleteEvent={deleteEvent} onCopyFromPreviousDay={copyEventsFromPreviousDay} />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </motion.main>
+            </AnimatePresence>
+
+            <Backlog
+              open={backlogOpen}
+              onToggle={() => setBacklogOpen(!backlogOpen)}
+              backlog={backlog}
+              onAddTask={addBacklogTask}
+              onDeleteTask={deleteBacklogTask}
+              onMoveToDay={moveBacklogToDay}
+              categories={categories}
+              isDragging={!!draggingTask}
+              isOverBacklog={isOverBacklog}
+            />
+
+            <DragOverlay dropAnimation={{ duration: 250, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
+              {draggingTask && (
+                <div className="tc tc-ghost" style={{ borderColor: draggingCategory?.color || '#ddd' }}>
+                  <div className="tc-top">
+                    <span className="tc-title">{draggingTask.title}</span>
                   </div>
                 </div>
+              )}
+            </DragOverlay>
+          </DndContext>
+        </div>
 
-              </>
-            )}
-          </motion.main>
-        </AnimatePresence>
-
-        {/* Sidebar celów tygodniowych */}
+        {/* Prawa kolumna — cele tygodniowe zawsze widoczne */}
         <WeeklyGoalsSidebar
-          open={goalsOpen}
-          onClose={() => setGoalsOpen(false)}
           weekStart={weekStart}
+          onWeeklyGoalsChange={setWeeklyGoals}
         />
-
-        <Backlog
-          open={backlogOpen}
-          onToggle={() => setBacklogOpen(!backlogOpen)}
-          backlog={backlog}
-          onAddTask={addBacklogTask}
-          onDeleteTask={deleteBacklogTask}
-          onMoveToDay={moveBacklogToDay}
-          categories={categories}
-          isDragging={!!draggingTask}
-          isOverBacklog={isOverBacklog}
-        />
-
-        <DragOverlay dropAnimation={{ duration: 250, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
-          {draggingTask && (
-            <div className="tc tc-ghost" style={{ borderColor: draggingCategory?.color || '#ddd' }}>
-              <div className="tc-top">
-                <span className="tc-title">{draggingTask.title}</span>
-              </div>
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
+      </div>
     </div>
   );
 }

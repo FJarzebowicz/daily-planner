@@ -4,6 +4,7 @@ import com.dailyplanner.dto.GlobalOrderRequest;
 import com.dailyplanner.dto.ReorderRequest;
 import com.dailyplanner.dto.SwapResponse;
 import com.dailyplanner.dto.TaskDto;
+import java.util.Map;
 import com.dailyplanner.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,16 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         taskService.delete(id);
+    }
+
+    /**
+     * Przypisuje lub odpina cel tygodniowy od taska.
+     * Body: {"weeklyGoalId": 5} lub {"weeklyGoalId": null}
+     */
+    @PatchMapping("/tasks/{id}/weekly-goal")
+    public TaskDto assignWeeklyGoal(@PathVariable Long id, @RequestBody Map<String, Long> body) {
+        Long weeklyGoalId = body.get("weeklyGoalId");
+        return taskService.assignWeeklyGoal(id, weeklyGoalId);
     }
 
     @PatchMapping("/tasks/{id}/global-order")

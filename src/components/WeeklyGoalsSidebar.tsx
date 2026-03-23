@@ -1,15 +1,11 @@
 /**
- * WeeklyGoalsSidebar — panel celów tygodniowych zintegrowany z plannerem.
+ * WeeklyGoalsSidebar — kolumna celów tygodniowych zawsze widoczna po prawej stronie plannera.
  *
- * Stały panel po prawej stronie (analogiczny do Backlog).
- * Otwierany przyciskiem "CELE" w WeekStrip.
+ * Wyświetla aktywne cele z możliwością:
+ *  - Zapisania "co chcę osiągnąć w tym tygodniu" (auto-save on blur)
+ *  - Oznaczenia czy w tym tygodniu udało się przybliżyć do celu
  *
- * Dla każdego aktywnego celu pokazuje:
- *  - Nazwę celu
- *  - Textarea "co chcę osiągnąć w tym tygodniu" (auto-save on blur)
- *  - Przycisk "Przybliżyłem się?" (toggle achieved)
- *
- * Dane są ładowane przy otwarciu i przy zmianie tygodnia.
+ * Dane są ładowane przy montowaniu i przy zmianie tygodnia.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -20,8 +16,9 @@ import type { WeeklyGoal } from '../types';
 // ── GoalIntentionRow ──
 
 /**
- * Pojedynczy wiersz celu w sidebarze.
- * Remountowany gdy zmienia się weeklyGoal.id (via key w rodzicu).
+ * Pojedynczy wiersz celu w panelu.
+ * key={`${goal.id}-${wg?.id ?? 'none'}`} w rodzicu wymusza remount przy zmianie weeklyGoal,
+ * dzięki czemu useState(weeklyGoal?.description) inicjalizuje się poprawnie.
  */
 function GoalIntentionRow({
   goal,
@@ -84,31 +81,48 @@ function GoalIntentionRow({
 // ── WeeklyGoalsSidebar ──
 
 interface Props {
-  open: boolean;
-  onClose: () => void;
-  /** Data poniedziałku aktualnie wyświetlanego tygodnia w plannerze */
+  /** Data poniedziałku aktualnie wyświetlanego tygodnia */
   weekStart: string;
+  /**
+   * Opcjonalna lista celów tygodniowych z zewnątrz (np. z App.tsx).
+   * Jeśli podana, komponent używa jej jako punkt startowy i aktualizuje lokalnie.
+   */
+  externalWeeklyGoals?: WeeklyGoal[];
+  /**
+   * Callback wywoływany gdy lista weeklyGoals się zmieni — pozwala App.tsx
+   * zsynchronizować swój stan (np. do pokazania nazwy celu na taskach).
+   */
+  onWeeklyGoalsChange?: (wgs: WeeklyGoal[]) => void;
 }
 
-export function WeeklyGoalsSidebar({ open, onClose, weekStart }: Props) {
+export function WeeklyGoalsSidebar({ weekStart, externalWeeklyGoals, onWeeklyGoalsChange }: Props) {
   const [goals, setGoals] = useState<GoalResponse[]>([]);
-  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>(externalWeeklyGoals ?? []);
+  const [loading, setLoading] = useState(true);
 
-  /** Ładuje aktywne cele i cele tygodniowe dla bieżącego tygodnia */
+  /** Ładuje aktywne cele i cele tygodniowe; graceful — każda gałąź niezależna */
   useEffect(() => {
-    if (!open) return;
-    setLoading(true);
+    let active = true;
 
-    goalApi.getAll('ACTIVE')
-      .then(setGoals)
-      .catch(() => setGoals([]));
+    Promise.all([
+      goalApi.getAll('ACTIVE').catch(() => [] as GoalResponse[]),
+      weeklyGoalApi.getByWeek(weekStart).catch(() => [] as WeeklyGoal[]),
+    ]).then(([fetchedGoals, fetchedWgs]) => {
+      if (!active) return;
+      setGoals(fetchedGoals);
+      const cast = fetchedWgs as WeeklyGoal[];
+      setWeeklyGoals(cast);
+      onWeeklyGoalsChange?.(cast);
+      setLoading(false);
+    });
 
-    weeklyGoalApi.getByWeek(weekStart)
-      .then((wgs) => setWeeklyGoals(wgs as WeeklyGoal[]))
-      .catch(() => setWeeklyGoals([]))
-      .finally(() => setLoading(false));
-  }, [open, weekStart]);
+    return () => { active = false; };
+  }, [weekStart]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function updateLocalWeeklyGoals(updated: WeeklyGoal[]) {
+    setWeeklyGoals(updated);
+    onWeeklyGoalsChange?.(updated);
+  }
 
   async function handleSave(goalId: number, description: string, existingId?: number) {
     if (existingId) {
@@ -116,54 +130,48 @@ export function WeeklyGoalsSidebar({ open, onClose, weekStart }: Props) {
       if (!existing) return;
       if (!description) {
         await weeklyGoalApi.delete(existingId);
-        setWeeklyGoals((prev) => prev.filter((w) => w.id !== existingId));
+        updateLocalWeeklyGoals(weeklyGoals.filter((w) => w.id !== existingId));
       } else {
         const updated = await weeklyGoalApi.update(existingId, { description, achieved: existing.achieved });
-        setWeeklyGoals((prev) => prev.map((w) => (w.id === existingId ? (updated as WeeklyGoal) : w)));
+        updateLocalWeeklyGoals(weeklyGoals.map((w) => (w.id === existingId ? (updated as WeeklyGoal) : w)));
       }
     } else if (description) {
       const created = await weeklyGoalApi.create({ goalId, weekStart, description });
-      setWeeklyGoals((prev) => [...prev, created as WeeklyGoal]);
+      updateLocalWeeklyGoals([...weeklyGoals, created as WeeklyGoal]);
     }
   }
 
   async function handleToggleAchieved(wg: WeeklyGoal) {
     const updated = await weeklyGoalApi.toggleAchieved(wg.id);
-    setWeeklyGoals((prev) => prev.map((w) => (w.id === wg.id ? (updated as WeeklyGoal) : w)));
+    updateLocalWeeklyGoals(weeklyGoals.map((w) => (w.id === wg.id ? (updated as WeeklyGoal) : w)));
   }
 
   return (
-    <>
-      {/* Overlay na mobile — kliknięcie zamyka */}
-      {open && <div className="wgs-overlay" onClick={onClose} />}
+    <aside className="wgs-column">
+      <div className="wgs-header">
+        <span className="wgs-title">CELE TYGODNIOWE</span>
+      </div>
 
-      <aside className={`wgs-panel${open ? ' wgs-panel--open' : ''}`}>
-        <div className="wgs-header">
-          <span className="wgs-title">CELE TYGODNIOWE</span>
-          <button className="wgs-close" type="button" onClick={onClose}>×</button>
-        </div>
-
-        <div className="wgs-body">
-          {loading ? (
-            <div className="wgs-loading">Ładowanie...</div>
-          ) : goals.length === 0 ? (
-            <p className="wgs-empty">Brak aktywnych celów.</p>
-          ) : (
-            goals.map((goal) => {
-              const wg = weeklyGoals.find((w) => w.goalId === goal.id) ?? null;
-              return (
-                <GoalIntentionRow
-                  key={`${goal.id}-${wg?.id ?? 'none'}`}
-                  goal={goal}
-                  weeklyGoal={wg}
-                  onSave={handleSave}
-                  onToggleAchieved={handleToggleAchieved}
-                />
-              );
-            })
-          )}
-        </div>
-      </aside>
-    </>
+      <div className="wgs-body">
+        {loading ? (
+          <div className="wgs-loading">Ładowanie...</div>
+        ) : goals.length === 0 ? (
+          <p className="wgs-empty">Brak aktywnych celów.<br />Dodaj cele na stronie Cele.</p>
+        ) : (
+          goals.map((goal) => {
+            const wg = weeklyGoals.find((w) => w.goalId === goal.id) ?? null;
+            return (
+              <GoalIntentionRow
+                key={`${goal.id}-${wg?.id ?? 'none'}`}
+                goal={goal}
+                weeklyGoal={wg}
+                onSave={handleSave}
+                onToggleAchieved={handleToggleAchieved}
+              />
+            );
+          })
+        )}
+      </div>
+    </aside>
   );
 }

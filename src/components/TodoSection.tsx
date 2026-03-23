@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Task, Category, HabitForDate } from '../types';
+import type { Task, Category, HabitForDate, WeeklyGoal } from '../types';
 import { PASTEL_COLORS } from '../types';
 import { ModalShell, FloatingInput, TaskModal } from './TaskModal';
 
@@ -25,6 +25,10 @@ interface TodoSectionProps {
   habits?: HabitForDate[];
   onToggleHabit?: (id: number, completed: boolean) => void;
   onSetGlobalOrder?: (taskId: number, globalOrder: number | null) => Promise<{ displacedTitle: string | null }>;
+  /** Lista aktywnych celów tygodniowych — do przypisywania tasków */
+  weeklyGoals?: WeeklyGoal[];
+  /** Przypisuje lub odpina cel tygodniowy od taska */
+  onLinkGoal?: (taskId: number, weeklyGoalId: number | null) => void;
 }
 
 /* ── helpers ── */
@@ -237,6 +241,8 @@ function SortableTask({
   onMoveToPosition,
   onStartWorking,
   onSetGlobalOrder,
+  weeklyGoals = [],
+  onLinkGoal,
 }: {
   task: Task;
   orderNum: number;
@@ -248,11 +254,14 @@ function SortableTask({
   onMoveToPosition: (newPos: number) => void;
   onStartWorking?: () => void;
   onSetGlobalOrder?: (globalOrder: number | null) => Promise<{ displacedTitle: string | null }>;
+  weeklyGoals?: WeeklyGoal[];
+  onLinkGoal?: (taskId: number, weeklyGoalId: number | null) => void;
 }) {
   const [editingOrder, setEditingOrder] = useState(false);
   const [orderInput, setOrderInput] = useState('');
   const [editingGlobal, setEditingGlobal] = useState(false);
   const [globalInput, setGlobalInput] = useState('');
+  const [goalPickerOpen, setGoalPickerOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { type: 'task', task },
@@ -396,6 +405,51 @@ function SortableTask({
         <p className="tc-desc">{task.description}</p>
       )}
 
+      {/* Weekly goal badge — pokazuje przypisany cel */}
+      {task.weeklyGoalId != null && (() => {
+        const linked = weeklyGoals.find((g) => g.id === task.weeklyGoalId);
+        if (!linked) return null;
+        return (
+          <div className="tc-goal-badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /></svg>
+            {linked.goalName}
+          </div>
+        );
+      })()}
+
+      {/* Inline goal picker dropdown */}
+      {goalPickerOpen && (
+        <div className="tc-goal-picker">
+          {weeklyGoals.length === 0 ? (
+            <span className="tc-goal-picker-empty">Brak celów tygodniowych</span>
+          ) : (
+            <>
+              {weeklyGoals.map((g) => (
+                <button
+                  key={g.id}
+                  className={`tc-goal-picker-item${task.weeklyGoalId === g.id ? ' tc-goal-picker-item--active' : ''}`}
+                  type="button"
+                  onClick={() => { onLinkGoal?.(task.id, task.weeklyGoalId === g.id ? null : g.id); setGoalPickerOpen(false); }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /></svg>
+                  {g.goalName}
+                  {task.weeklyGoalId === g.id && ' ✓'}
+                </button>
+              ))}
+              {task.weeklyGoalId != null && (
+                <button
+                  className="tc-goal-picker-item tc-goal-picker-item--unlink"
+                  type="button"
+                  onClick={() => { onLinkGoal?.(task.id, null); setGoalPickerOpen(false); }}
+                >
+                  Odepnij cel
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Bottom row: drag + pills + hover actions */}
       <div className="tc-bottom">
         {!closed && (
@@ -431,6 +485,18 @@ function SortableTask({
                 title="Rozpocznij"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+              </motion.button>
+            )}
+            {/* Przycisk linkowania do celu tygodniowego */}
+            {onLinkGoal && (
+              <motion.button
+                className={`tc-action${task.weeklyGoalId != null ? ' tc-action--goal-linked' : ''}`}
+                onClick={() => setGoalPickerOpen((v) => !v)}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                title={task.weeklyGoalId != null ? 'Zmień cel tygodniowy' : 'Przypisz do celu tygodniowego'}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /></svg>
               </motion.button>
             )}
             <motion.button
@@ -527,6 +593,8 @@ function CategoryCard({
   onToggleHabit,
   onStartWorking,
   onSetGlobalOrder,
+  weeklyGoals,
+  onLinkGoal,
 }: {
   category: Category;
   tasks: Task[];
@@ -542,6 +610,8 @@ function CategoryCard({
   onToggleHabit?: (id: number, completed: boolean) => void;
   onStartWorking?: (taskId: number) => void;
   onSetGlobalOrder?: (taskId: number, globalOrder: number | null) => Promise<{ displacedTitle: string | null }>;
+  weeklyGoals?: WeeklyGoal[];
+  onLinkGoal?: (taskId: number, weeklyGoalId: number | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -591,6 +661,8 @@ function CategoryCard({
                   }}
                   onStartWorking={onStartWorking ? () => onStartWorking(task.id) : undefined}
                   onSetGlobalOrder={onSetGlobalOrder ? (g) => onSetGlobalOrder(task.id, g) : undefined}
+                  weeklyGoals={weeklyGoals}
+                  onLinkGoal={onLinkGoal}
                 />
               ))}
             </AnimatePresence>
@@ -661,6 +733,8 @@ export function TodoSection({
   habits = [],
   onToggleHabit,
   onSetGlobalOrder,
+  weeklyGoals = [],
+  onLinkGoal,
 }: TodoSectionProps) {
   const [addingTaskCat, setAddingTaskCat] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -736,6 +810,8 @@ export function TodoSection({
               onToggleHabit={onToggleHabit}
               onStartWorking={onSetCurrentTask}
               onSetGlobalOrder={onSetGlobalOrder}
+              weeklyGoals={weeklyGoals}
+              onLinkGoal={onLinkGoal}
             />
           ))}
         </AnimatePresence>

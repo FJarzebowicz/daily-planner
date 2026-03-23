@@ -207,6 +207,12 @@ export const taskApi = {
    */
   setGlobalOrder: (id: number, globalOrder: number | null) =>
     request<SwapResponse>(`/tasks/${id}/global-order`, { method: 'PATCH', body: JSON.stringify({ globalOrder }) }),
+  /**
+   * Przypisuje lub odpina cel tygodniowy od taska.
+   * Dedykowany PATCH endpoint — nie wymaga wysyłania pełnego body taska.
+   */
+  assignWeeklyGoal: (id: number, weeklyGoalId: number | null) =>
+    request<TaskResponse>(`/tasks/${id}/weekly-goal`, { method: 'PATCH', body: JSON.stringify({ weeklyGoalId }) }),
 };
 
 // ── Meal ──

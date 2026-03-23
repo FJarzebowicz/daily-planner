@@ -4,11 +4,11 @@
 
 /* ===== APP LAYOUT ===== */
 .app {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 clamp(24px, 5vw, 80px) 120px;
   position: relative;
 }
+
 
 .main {
   margin-top: 0;
@@ -893,6 +893,74 @@
 .tc-action--play:hover {
   background: var(--done);
   color: #fff;
+}
+/* Przycisk celu tygodniowego — aktywny gdy task ma przypisany cel */
+.tc-action--goal-linked {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.tc-action--goal-linked:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Badge przypisanego celu na karcie taska */
+.tc-goal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+
+/* Inline picker celów tygodniowych */
+.tc-goal-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 6px;
+  margin-top: 4px;
+}
+.tc-goal-picker-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+}
+.tc-goal-picker-item {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.tc-goal-picker-item:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+.tc-goal-picker-item--active {
+  color: var(--accent);
+  font-weight: 600;
+}
+.tc-goal-picker-item--unlink {
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+  padding-top: 8px;
+  font-style: italic;
+}
+.tc-goal-picker-item--unlink:hover {
+  color: var(--accent);
 }
 
 .add-task-btn {
@@ -1809,6 +1877,8 @@
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--border);
+  padding-left: clamp(24px, 4vw, 64px);
+  padding-right: clamp(24px, 4vw, 64px);
 }
 
 /* NavTabs wewnątrz topbara — usuń własny border-bottom żeby nie dublować */
@@ -1818,15 +1888,45 @@
   flex: 1;
 }
 
+/* ===== APP BODY — dwukolumnowy layout ===== */
+
+.app-body {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  align-items: start;
+  gap: 0;
+}
+
+.app-main-col {
+  min-width: 0;
+  padding: 0 clamp(24px, 4vw, 64px) 120px;
+}
+
+@media (max-width: 1100px) {
+  .app-body {
+    grid-template-columns: 1fr 240px;
+  }
+}
+
+@media (max-width: 860px) {
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+  .wgs-column {
+    display: none;
+  }
+}
+
 /* ===== WEEK STRIP ===== */
 
 .week-strip {
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 0 24px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
+  padding-left: clamp(24px, 4vw, 64px);
+  padding-right: clamp(24px, 4vw, 64px);
 }
 
 .week-strip-nav {
@@ -1918,84 +2018,42 @@
 }
 .week-strip-bar-fill--done { background: #6ab47b; }
 
-/* Przycisk toggle celów tygodniowych */
-.week-strip-goals-btn {
-  background: none;
-  border: none;
-  border-left: 1px solid var(--border);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1px;
-  padding: 0 16px;
-  height: 44px;
-  cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.week-strip-goals-btn:hover { color: var(--text); }
-.week-strip-goals-btn--active {
-  color: var(--text);
-  background: var(--surface);
-}
+/* ===== WEEKLY GOALS COLUMN (prawa kolumna plannera) ===== */
 
-/* ===== WEEKLY GOALS SIDEBAR (w plannerze) ===== */
-
-.wgs-overlay {
-  display: none;
-}
-
-.wgs-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 320px;
-  background: var(--bg);
+.wgs-column {
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.25s ease;
-  z-index: 200;
-  overflow: hidden;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
 }
-.wgs-panel--open { transform: translateX(0); }
 
 .wgs-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
 }
 
 .wgs-title {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 2px;
-  color: var(--text);
-}
-
-.wgs-close {
-  background: none;
-  border: none;
   color: var(--text-muted);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-  transition: color var(--transition-fast);
+  text-transform: uppercase;
 }
-.wgs-close:hover { color: var(--text); }
 
 .wgs-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;

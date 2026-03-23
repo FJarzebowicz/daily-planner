@@ -49,6 +49,15 @@ public class Task {
     @JoinColumn(name = "milestone_id")
     private Milestone milestone;
 
+    /**
+     * Opcjonalne powiązanie z celem tygodniowym.
+     * null = task nie jest przypisany do żadnego celu.
+     * ON DELETE SET NULL — usunięcie WeeklyGoal nie kasuje taska.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "weekly_goal_id")
+    private WeeklyGoal weeklyGoal;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -88,6 +97,8 @@ public class Task {
     public void setGoal(Goal goal) { this.goal = goal; }
     public Milestone getMilestone() { return milestone; }
     public void setMilestone(Milestone milestone) { this.milestone = milestone; }
+    public WeeklyGoal getWeeklyGoal() { return weeklyGoal; }
+    public void setWeeklyGoal(WeeklyGoal weeklyGoal) { this.weeklyGoal = weeklyGoal; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
