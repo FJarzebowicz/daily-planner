@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import type { Task, Category } from '../types';
+import type { Task, Category, WeeklyGoal } from '../types';
 import { TIME_PRESETS } from '../types';
-import { formatDate } from '../utils';
+import { formatDate, getWeekStart } from '../utils';
+import { weeklyGoalApi } from '../api';
 
 /* ── Shared modal shell (portal) ── */
 
@@ -119,7 +120,7 @@ export function TaskModal({
   categories?: Category[];
   defaultDate?: string;
   initial?: Task;
-  onSubmit: (data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string; date?: string }) => void;
+  onSubmit: (data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string; date?: string; weeklyGoalId?: number | null }) => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState(initial?.title ?? '');
@@ -131,7 +132,19 @@ export function TaskModal({
     categoryId ?? categories?.[0]?.id ?? 0,
   );
   const [date, setDate] = useState(defaultDate ?? formatDate(new Date()));
+  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
+  const [selectedWeeklyGoalId, setSelectedWeeklyGoalId] = useState<number | null>(
+    initial?.weeklyGoalId ?? null,
+  );
   const isEdit = !!initial;
+
+  useEffect(() => {
+    const effectiveDate = defaultDate ?? formatDate(new Date());
+    const weekStart = getWeekStart(effectiveDate);
+    weeklyGoalApi.getByWeek(weekStart)
+      .then((goals) => setWeeklyGoals(goals as WeeklyGoal[]))
+      .catch(() => {});
+  }, [defaultDate]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -143,6 +156,7 @@ export function TaskModal({
       estimatedMinutes,
       priority,
       ...(defaultDate !== undefined ? { date } : {}),
+      weeklyGoalId: selectedWeeklyGoalId,
     });
     onClose();
   }
@@ -234,6 +248,33 @@ export function TaskModal({
             </button>
           ))}
         </div>
+
+        {weeklyGoals.length > 0 && (
+          <>
+            <div className="modal-spacer" />
+            <label className="modal-label">Cel tygodniowy (opcjonalnie)</label>
+            <div className="priority-picker" style={{ flexWrap: 'wrap', gap: '6px' }}>
+              <button
+                type="button"
+                className={`priority-btn ${selectedWeeklyGoalId === null ? 'priority-btn--active' : ''}`}
+                onClick={() => setSelectedWeeklyGoalId(null)}
+              >
+                Brak
+              </button>
+              {weeklyGoals.map((wg) => (
+                <button
+                  key={wg.id}
+                  type="button"
+                  className={`priority-btn ${selectedWeeklyGoalId === wg.id ? 'priority-btn--active' : ''}`}
+                  onClick={() => setSelectedWeeklyGoalId(wg.id)}
+                  title={wg.description}
+                >
+                  {wg.goalName}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="modal-actions">
           <button type="button" className="btn-modal btn-modal--cancel" onClick={onClose}>Anuluj</button>

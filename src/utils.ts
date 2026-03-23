@@ -32,6 +32,22 @@ export function formatPolishDate(date: Date): string {
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+/** Zwraca datę poniedziałku tygodnia dla podanej daty (YYYY-MM-DD) */
+export function getWeekStart(dateStr: string): string {
+  const d = parseLocalDate(dateStr);
+  const dow = d.getDay(); // 0=Nd, 1=Pon, ..., 6=Sob
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return formatDate(d);
+}
+
+/** Zwraca datę niedzieli tygodnia dla podanej daty (YYYY-MM-DD) */
+export function getWeekEnd(dateStr: string): string {
+  const start = parseLocalDate(getWeekStart(dateStr));
+  start.setDate(start.getDate() + 6);
+  return formatDate(start);
+}
+
 export function generateTimeSlots(stepMinutes: number = 15): string[] {
   const slots: string[] = [];
   for (let h = 0; h < 24; h++) {

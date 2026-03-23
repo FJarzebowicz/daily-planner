@@ -165,6 +165,7 @@ export interface TaskResponse {
   sortOrder: number;
   completed: boolean;
   globalOrder: number | null;
+  weeklyGoalId: number | null;
 }
 
 export interface SwapResponse {
@@ -527,6 +528,29 @@ export interface BacklogTaskResponse {
   priority: string;
   createdAt: string;
 }
+
+// ── Weekly Goals ──
+export interface WeeklyGoalResponse {
+  id: number;
+  goalId: number;
+  goalName: string;
+  weekStart: string;
+  description: string;
+  achieved: boolean;
+  createdAt: string;
+}
+
+export const weeklyGoalApi = {
+  getByWeek: (weekStart: string) =>
+    request<WeeklyGoalResponse[]>(`/weekly-goals?weekStart=${weekStart}`),
+  create: (data: { goalId: number; weekStart: string; description: string }) =>
+    request<WeeklyGoalResponse>('/weekly-goals', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { description: string; achieved: boolean }) =>
+    request<WeeklyGoalResponse>(`/weekly-goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  toggleAchieved: (id: number) =>
+    request<WeeklyGoalResponse>(`/weekly-goals/${id}/toggle-achieved`, { method: 'PATCH' }),
+  delete: (id: number) => request<void>(`/weekly-goals/${id}`, { method: 'DELETE' }),
+};
 
 export const backlogApi = {
   getAll: () => request<BacklogTaskResponse[]>('/backlog'),

@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const TABS = [
   { path: '/', label: 'PLANNER', shortLabel: 'PLANNER' },
+  { path: '/week', label: 'TYDZIEŃ', shortLabel: 'TYDZIEŃ' },
   { path: '/habits', label: 'HABITY', shortLabel: 'HABITY' },
   { path: '/goals', label: 'CELE', shortLabel: 'CELE' },
   { path: '/shopping', label: 'ZAKUPY', shortLabel: 'ZAKUPY' },

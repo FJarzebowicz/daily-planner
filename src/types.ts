@@ -48,6 +48,7 @@ export interface Task {
   sortOrder: number;
   completed: boolean;
   globalOrder: number | null;
+  weeklyGoalId: number | null;
 }
 
 export interface BacklogTask {
@@ -182,6 +183,18 @@ export interface DayData {
   wakeUpTime: string;
   sleepTime: string;
   closed: boolean;
+}
+
+// ── Weekly Goals ──
+
+export interface WeeklyGoal {
+  id: number;
+  goalId: number;
+  goalName: string;
+  weekStart: string; // YYYY-MM-DD (poniedziałek)
+  description: string;
+  achieved: boolean;
+  createdAt: string;
 }
 
 // ── Goals ──

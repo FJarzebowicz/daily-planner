@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { DayData, BacklogTask, Task, Category, MealSlot, Note, RecurringEvent, HabitForDate } from './types';
 import { formatDate } from './utils';
 import { dayApi, categoryApi, taskApi, mealApi, thoughtApi, recurringEventApi, backlogApi, habitApi } from './api';
@@ -34,7 +35,9 @@ function customCollisionDetection(args: Parameters<typeof closestCenter>[0]) {
 
 function App() {
   const todayStr = formatDate(new Date());
-  const [currentDate, setCurrentDate] = useState(todayStr);
+  const [searchParams] = useSearchParams();
+  const initialDate = searchParams.get('date') || todayStr;
+  const [currentDate, setCurrentDate] = useState(initialDate);
   const [day, setDay] = useState<DayData | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -154,7 +157,7 @@ function App() {
   }
 
   // ── Task CRUD ──
-  async function addTask(data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string }) {
+  async function addTask(data: { title: string; description: string; categoryId: number; estimatedMinutes: number; priority: string; weeklyGoalId?: number | null }) {
     const task = await taskApi.create(currentDate, data);
     setTasks((prev) => [...prev, task]);
   }
