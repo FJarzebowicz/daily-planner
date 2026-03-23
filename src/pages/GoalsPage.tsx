@@ -817,15 +817,15 @@ function GoalDetailView({
                 {showMTCreateHabit && (
                   <CreateHabitInlineForm onSubmit={handleMTCreateHabit} onCancel={() => setShowMTCreateHabit(false)} />
                 )}
+                {showMTCreateTask && (
+                  <TaskModal
+                    categories={categories}
+                    defaultDate={formatDate(new Date())}
+                    onSubmit={(data) => handleMTCreateTask({ ...data, date: data.date ?? formatDate(new Date()) })}
+                    onClose={() => setShowMTCreateTask(false)}
+                  />
+                )}
               </div>
-              {showMTCreateTask && (
-                <TaskModal
-                  categories={categories}
-                  defaultDate={formatDate(new Date())}
-                  onSubmit={(data) => handleMTCreateTask({ ...data, date: data.date ?? formatDate(new Date()) })}
-                  onClose={() => setShowMTCreateTask(false)}
-                />
-              )}
             ) : (
               <div>
                 {showMasterTaskForm ? (
