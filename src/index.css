@@ -6,23 +6,21 @@
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'Space Grotesk', monospace;
 
-  --bg: #F7F6F3;
-  --text: #1C1B18;
-  --text-secondary: #4A4944;
-  --text-muted: #8C8B84;
-  --text-faint: #C5C4BC;
+  --bg: #FFFFFF;
+  --text: #000000;
+  --text-secondary: #333333;
+  --text-muted: #999999;
+  --text-faint: #CCCCCC;
 
-  --accent: #D94F0A;
+  --accent: #FF3B00;
 
-  --border: #E3E2DC;
-  --border-strong: #C0BFB8;
+  --border: #E0E0E0;
+  --border-strong: #000000;
 
   --blue: #2538EB;
   --surface: #FFFFFF;
-  --surface-hover: #F0EFE9;
 
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
-  --shadow-dropdown: 0 4px 24px rgba(0,0,0,0.10);
+  --shadow-dropdown: 0 4px 24px rgba(0,0,0,0.12);
   --transition-fast: 120ms ease;
   --transition: 200ms ease;
 }
@@ -38,8 +36,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
-
-a { color: inherit; text-decoration: none; }
 
 #root {
   min-height: 100vh;
