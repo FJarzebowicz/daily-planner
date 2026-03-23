@@ -13,6 +13,7 @@ import type {
 import { GOAL_STATUS_LABELS } from '../types';
 import { NavTabs } from '../components/NavTabs';
 import { UserMenu } from '../components/UserMenu';
+import { TaskModal } from '../components/TaskModal';
 
 // ── Date helpers ──
 const MONTH_NAMES = [
@@ -362,67 +363,6 @@ function CreateHabitInlineForm({
   );
 }
 
-// ── Create Task Inline Form ──
-function CreateTaskInlineForm({
-  categories,
-  onSubmit,
-  onCancel,
-}: {
-  categories: Category[];
-  onSubmit: (data: { title: string; description?: string; categoryId: number; estimatedMinutes: number; priority: string; date: string }) => void;
-  onCancel: () => void;
-}) {
-  const [title, setTitle] = useState('');
-  const [categoryId, setCategoryId] = useState<number>(categories[0]?.id ?? 0);
-  const [estimatedMinutes, setEstimatedMinutes] = useState(30);
-  const [priority] = useState('MEDIUM');
-  const [date] = useState(formatDate(new Date()));
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) return;
-    onSubmit({ title: title.trim(), categoryId, estimatedMinutes, priority, date });
-  }
-
-  return (
-    <form className="goal-inline-form" onSubmit={handleSubmit}>
-      <input
-        className="habit-form-input"
-        placeholder="Nazwa taska"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        autoFocus
-      />
-      <div className="habit-form-row">
-        <label className="habit-form-label">KATEGORIA</label>
-        <select
-          className="habit-form-select"
-          value={categoryId}
-          onChange={(e) => setCategoryId(Number(e.target.value))}
-        >
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </div>
-      <div className="habit-form-row">
-        <label className="habit-form-label">CZAS (MIN)</label>
-        <input
-          type="number"
-          className="habit-form-input habit-form-input--short"
-          min={5}
-          value={estimatedMinutes}
-          onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
-        />
-      </div>
-      <div className="habit-form-actions">
-        <button type="submit" className="habit-form-submit">DODAJ</button>
-        <button type="button" className="habit-form-cancel" onClick={onCancel}>ANULUJ</button>
-      </div>
-    </form>
-  );
-}
-
 // ── Milestone Item ──
 function MilestoneItem({
   goalId,
@@ -595,10 +535,15 @@ function MilestoneItem({
           {showCreateHabit && (
             <CreateHabitInlineForm onSubmit={handleCreateHabit} onCancel={() => setShowCreateHabit(false)} />
           )}
-          {showCreateTask && (
-            <CreateTaskInlineForm categories={categories} onSubmit={handleCreateTask} onCancel={() => setShowCreateTask(false)} />
-          )}
         </div>
+      )}
+      {showCreateTask && (
+        <TaskModal
+          categories={categories}
+          defaultDate={formatDate(new Date())}
+          onSubmit={(data) => handleCreateTask({ ...data, date: data.date ?? formatDate(new Date()) })}
+          onClose={() => setShowCreateTask(false)}
+        />
       )}
     </div>
   );
@@ -872,10 +817,15 @@ function GoalDetailView({
                 {showMTCreateHabit && (
                   <CreateHabitInlineForm onSubmit={handleMTCreateHabit} onCancel={() => setShowMTCreateHabit(false)} />
                 )}
-                {showMTCreateTask && (
-                  <CreateTaskInlineForm categories={categories} onSubmit={handleMTCreateTask} onCancel={() => setShowMTCreateTask(false)} />
-                )}
               </div>
+              {showMTCreateTask && (
+                <TaskModal
+                  categories={categories}
+                  defaultDate={formatDate(new Date())}
+                  onSubmit={(data) => handleMTCreateTask({ ...data, date: data.date ?? formatDate(new Date()) })}
+                  onClose={() => setShowMTCreateTask(false)}
+                />
+              )}
             ) : (
               <div>
                 {showMasterTaskForm ? (
